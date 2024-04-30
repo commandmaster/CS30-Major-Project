@@ -35,12 +35,32 @@ class Game{
 
 class ModuleLoader{
     constructor(){
+        this.moduleClasses = [];
+        this.moduleInstances = [];
         this.loadModules();
     }
 
     async loadModules(){
         const json = await fetch('GameModules/moduleConfig.json').then(response => response.json());
         console.log(json);
+
+        for(const module of json.modules){
+            await this.loadModule(module);
+        }
+
+        console.log(this.moduleClasses);
+    }
+
+    async loadModule(module){
+        const path = './GameModules' + module.path;
+        
+        const moduleClass = await import(path);
+        
+        if (module.exportType === "default"){
+            this.moduleClasses.push(moduleClass.default);
+            this.moduleInstances.push(new moduleClass.default());
+        }
+
     }
 }
 
