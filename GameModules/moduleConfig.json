@@ -1,0 +1,54 @@
+{
+    "configType": "module congiguration",
+    "modules": [
+        {
+            "path": "./engine.js",
+            "exports": "default",
+            "config": {
+                "name": "engine",
+                "version": "1.0.0"
+            }
+        },
+        {
+            "path": "./gameObject.js",
+            "exports": "default",
+            "config": {
+                "name": "gameObject",
+                "version": "1.0.0"
+            }
+        },
+        {
+            "path": "./math.js",
+            "exports": "default",
+            "config": {
+                "name": "math",
+                "version": "1.0.0"
+            }
+        },
+        {
+            "path": "./physics.js",
+            "exports": "default",
+            "config": {
+                "name": "physics",
+                "version": "1.0.0"
+            }
+        },
+        {
+            "path": "./renderer.js",
+            "exports": "default",
+            "config": {
+                "name": "renderer",
+                "version": "1.0.0"
+            }
+        },
+        {
+            "path": "./particle.js",
+            "exports": "default",
+            "config": {
+                "name": "particle",
+                "version": "1.0.0"
+            }
+        }
+
+    ]
+}
