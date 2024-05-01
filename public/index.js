@@ -228,32 +228,6 @@ class PlayerController{
     }
 }
 
-class PhysicsWorld{
-
-}
-
-class PhysicsBody{
-    acceleration = {x: 0, y: 0};
-    velocity = {x: 0, y: 0};
-    position = {x: 0, y: 0};
-    rotation = 0;
-    angularVelocity = 0;
-    angularAcceleration = 0;
-    momentum = 0;
-    mass = 0;
-    coliders = [];
-
-
-    constructor(physicsWorld, x, y, mass, coliders){
-        this.physicsWorld = physicsWorld;
-
-        this.position.x = x;
-        this.position.y = y;
-        this.mass = mass;
-        this.coliders = coliders;
-    }
-}
-
 
 
 const game = new Game(ctx, canvas);
