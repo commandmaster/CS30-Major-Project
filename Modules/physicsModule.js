@@ -1,11 +1,6 @@
 import { ModuleAPI } from "./moduleBase";
 import { Module } from "./moduleBase";
 
-const Engine = Matter.Engine,
-        Bodies = Matter.Bodies,
-        Body = Matter.Body,
-        Composite = Matter.Composite,
-        Render = Matter.Render
 
 
 export class PhysicsAPI extends ModuleAPI {
@@ -14,22 +9,22 @@ export class PhysicsAPI extends ModuleAPI {
     }
 }
 
+
+const Engine = Matter.Engine,
+        Bodies = Matter.Bodies,
+        Body = Matter.Body,
+        Composite = Matter.Composite,
+        Render = Matter.Render
+
 export class PhysicsModule extends Module {
+      //#region Private Fields
+      #lastPhysicsUpdate = performance.now();
+      #timeStepLimit = 50; //Unit: ms, Prevents spiral of death and a bug when alt tabbing causes dt to be very large and the physics to break
+      //#endregion
+      
     constructor(engineAPI) {
         super(engineAPI);
-    }
 
-}
-
-
-
-class PhysicsWorld{
-    //#region Private Fields
-    #lastPhysicsUpdate = performance.now();
-    #timeStepLimit = 50; //Unit: ms, Prevents spiral of death and a bug when alt tabbing causes dt to be very large and the physics to break
-    //#endregion
-
-    constructor(){
         this.matterEngine = Engine.create({gravity: {x: 0, y: 1}});
         this.matterWorld = this.matterEngine.world;
         
@@ -38,11 +33,11 @@ class PhysicsWorld{
         this.rigidBodies = [];
     }
 
-    Start() {
+    start() {
         
     }
 
-    Update(dt) {
+    update(dt) {
         const timeSinceLastUpdate = Math.min(performance.now() - this.#lastPhysicsUpdate, this.#timeStepLimit); // Prevents spiral of death and a bug when alt tabbing causes dt to be very large and the physics to break
         Engine.update(this.matterEngine, timeSinceLastUpdate);
         this.#lastPhysicsUpdate = performance.now();
@@ -75,6 +70,8 @@ class PhysicsWorld{
 
 }
 
+
+
 class PhysicsBody{
     acceleration = {x: 0, y: 0};
     velocity = {x: 0, y: 0};
@@ -86,9 +83,8 @@ class PhysicsBody{
     mass = 0;
     coliders = [];
 
-
-    constructor(physicsWorld, x, y, mass, coliders){
-        this.physicsWorld = physicsWorld;
+    constructor(physicsModule, x, y, mass, coliders){
+        this.physicsModule = physicsModule;
 
         this.position.x = x;
         this.position.y = y;

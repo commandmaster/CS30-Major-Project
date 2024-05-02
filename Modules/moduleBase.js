@@ -15,4 +15,24 @@ export class Module{
         this.ctx = engineAPI.ctx;
         this.canvas = engineAPI.canvas;
     }
+
+    preloadLevel(level){
+        
+    }   
+
+    setupLevel(level){
+        
+    }
+
+    endLevel(level){
+        
+    }
+
+    start(){
+        
+    }
+
+    update(dt){
+        
+    } 
 }
