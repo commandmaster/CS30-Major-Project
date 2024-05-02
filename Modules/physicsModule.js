@@ -1,8 +1,27 @@
+import { ModuleAPI } from "./moduleBase";
+import { Module } from "./moduleBase";
+
 const Engine = Matter.Engine,
         Bodies = Matter.Bodies,
         Body = Matter.Body,
         Composite = Matter.Composite,
         Render = Matter.Render
+
+
+export class PhysicsAPI extends ModuleAPI {
+    constructor(engineAPI, module) {
+        super(engineAPI, module);
+    }
+}
+
+export class PhysicsModule extends Module {
+    constructor(engineAPI) {
+        super(engineAPI);
+    }
+
+}
+
+
 
 class PhysicsWorld{
     //#region Private Fields
