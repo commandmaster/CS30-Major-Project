@@ -13,3 +13,35 @@ export class EntityModule extends Module {
     }
 }
 
+class Entity {
+    components = [];
+    constructor(entityAPI, serializedComponents) {
+        this.entityAPI = entityAPI;
+        this.serializedComponents = serializedComponents;
+        this.entityModule = entityAPI.module;
+
+        this.#init();
+    }
+
+    #init() {
+        this.#initComponents();
+    }
+
+    #initComponents() {
+        this.serializedComponents.forEach(component => {
+            this.entityModule.createComponent(component);
+        });
+    }
+
+    createComponent(component) {
+        const componentAPI = this.entityAPI.engineAPI.getComponentAPI(component.type);
+        
+    }
+
+
+
+    
+
+
+}
+

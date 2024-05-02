@@ -44,11 +44,15 @@ export class EngineAPI{
                 return key;
             }
         }
+
+        throw new Error(`Module ${module} does not exist`);
     }
     
 }
 
 export class Engine{
+    #lastUpdate = performance.now();
+
     modules = {};
     constructor(context, canvas){
         this.ctx = context;
@@ -57,6 +61,17 @@ export class Engine{
         this.#loadModules();
 
         this.api = new EngineAPI(context, canvas, this);
+    }
+
+    async preload(){
+        return new Promise(async (resolve, reject) => {
+            for (let module in this.modules){
+                if (typeof this.modules[module].preload === 'function'){
+                    await this.modules[module].preload();
+                }
+            }
+            resolve();
+        });
     }
 
     #loadModules(){
@@ -118,6 +133,9 @@ export class Engine{
                 this.modules[module].start();
             }
         }
+
+        this.#lastUpdate = performance.now();
+        this.update(0);
     }
 
     update(dt){
@@ -126,7 +144,10 @@ export class Engine{
                 this.modules[module].update(dt);
             }
         }
+
+        const dt = performance.now() - this.#lastUpdate;
+        this.#lastUpdate = performance.now();
+        requestAnimationFrame(() => this.update(dt));
     }
-
-
 }
+

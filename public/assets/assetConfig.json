@@ -1,0 +1,7 @@
+[
+    {
+        "type": "image",
+        "path": "assets/spriteSheets/playerAnmis.png",
+        "name": "playerAnims"
+    }
+]

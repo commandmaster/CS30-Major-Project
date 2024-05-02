@@ -16,6 +16,11 @@ export class Module{
         this.canvas = engineAPI.canvas;
     }
 
+    preload(){
+        
+    }
+
+
     preloadLevel(level){
         
     }   
@@ -35,4 +40,24 @@ export class Module{
     update(dt){
         
     } 
+}
+
+export class Component{
+    constructor(entity, moduleAPI, {}){
+        this.entity = entity;
+        this.moduleAPI = moduleAPI;
+        this.engineAPI = moduleAPI.engineAPI;
+        this.engine = moduleAPI.engineAPI.engine;
+        this.ctx = moduleAPI.engineAPI.ctx;
+        this.canvas = moduleAPI.engineAPI.canvas;
+        this.module = moduleAPI.module;
+    }
+
+    static fromJSON(entity, moduleAPI, jsonObject){
+        return new Component(entity, moduleAPI, jsonObject);
+    }
+
+    toJSON(){
+        return {};
+    }
 }
