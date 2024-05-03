@@ -114,3 +114,10 @@ export class PhysicsModule extends Module {
 
 }
 
+class PhysicsModule2 extends Module{
+    constructor(engineAPI){
+        super(engineAPI);
+    }
+
+    
+}
