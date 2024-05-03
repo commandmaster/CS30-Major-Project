@@ -72,7 +72,7 @@ export class PhysicsModule extends Module {
 
 
 
-class PhysicsBody{
+class RigidbodyComponent{
     acceleration = {x: 0, y: 0};
     velocity = {x: 0, y: 0};
     position = {x: 0, y: 0};
