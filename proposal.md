@@ -6,6 +6,7 @@ With my major project, I intend to advance my understanding of game development 
 ## Needs To Have List
 - **Physics** (Maybe custom or maybe adapted Matter.js)
   - Physics Bodies
+  - Matter JS as the physics engine
 - **Rendering**
   - Rendering API with camera scaling
   - Animations for different player states (state machine)
@@ -25,6 +26,8 @@ With my major project, I intend to advance my understanding of game development 
 - **Code Neatness**
   - Comments
   - Use of public and private methods/properties to help keep maintainability
+- **Inputs**
+  - Hard coded keybinds that come default with the game
 
 
 
@@ -42,3 +45,11 @@ With my major project, I intend to advance my understanding of game development 
 - **Rendering**
   - Add bloom and other post proccessing effets
   - Maybe implement a 2D material system using webGL shader (only if everything else is completed)
+- **Physics**
+  - Create own custom physics engine using the implicit euler method.
+  - Physics Engine could have:
+    - Continous collision detection using ray casting
+    - Terrain collision using quadratic besier curve
+    - Potential S.A.T. collison for rotated bodies allowing for proper angular forces to be applied 
+- **Inputs**
+  - Bindings that the user can set using a menu for each action.
