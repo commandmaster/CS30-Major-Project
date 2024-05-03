@@ -1,5 +1,5 @@
-import { ModuleAPI, Module } from "./moduleBase";
-import { Component } from "./entityModule";
+import { ModuleAPI, Module } from "./moduleBase.js";
+import { Component } from "./entityModule.js";
 
 
 class ScriptingComponent extends Component{

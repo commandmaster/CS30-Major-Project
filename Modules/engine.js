@@ -5,7 +5,7 @@ import { PhysicsAPI, PhysicsModule } from "./physicsModule.js";
 import { EntityAPI, EntityModule } from "./entityModule.js";
 import { AssetAPI, AssetModule } from "./assetModule.js";
 
-import { ModuleAPI, Module } from "./moduleBase";
+import { ModuleAPI, Module } from "./moduleBase.js";
 
 
 export class EngineAPI{
@@ -35,7 +35,8 @@ export class EngineAPI{
     getAPI(module){
         if (typeof this.APIs[module] === 'undefined') throw new Error(`Module ${module} does not exist`);
 
-        else if (typeof this.APIs[module] === String) {
+        
+        else if (typeof module === 'string') {
             return this.APIs[module];
         }
 
@@ -59,12 +60,15 @@ export class Engine{
         this.ctx = context;
         this.canvas = canvas;
 
+        this.api = new EngineAPI(context, canvas, this);
+
         this.#loadModules();
 
-        this.api = new EngineAPI(context, canvas, this);
+        
     }
 
     async preload(){
+        console.log("Preloading engine");
         return new Promise(async (resolve, reject) => {
             for (let module in this.modules){
                 if (typeof this.modules[module].preload === 'function'){
@@ -135,6 +139,8 @@ export class Engine{
             }
         }
 
+        console.log("Engine started");
+
         this.#lastUpdate = performance.now();
         this.update(0);
     }
@@ -146,7 +152,7 @@ export class Engine{
             }
         }
 
-        const dt = performance.now() - this.#lastUpdate;
+        dt = performance.now() - this.#lastUpdate;
         this.#lastUpdate = performance.now();
         requestAnimationFrame(() => this.update(dt));
     }

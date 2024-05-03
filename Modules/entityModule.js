@@ -1,4 +1,4 @@
-import { ModuleAPI, Module } from "./moduleBase";
+import { ModuleAPI, Module } from "./moduleBase.js";
 
 
 class Entity {

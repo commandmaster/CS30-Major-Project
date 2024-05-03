@@ -1,5 +1,5 @@
-import { ModuleAPI, Module } from "./moduleBase";
-import { Component } from "./entityModule";
+import { ModuleAPI, Module } from "./moduleBase.js";
+import { Component } from "./entityModule.js";
 
 class Camera{
     #baseResolution;
@@ -16,12 +16,13 @@ class Camera{
 
     #update(){
         // set orgin to the center of the canvas
-        ctx.translate(canvas.width / 2, canvas.height / 2);
+        this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
 
-        const minScale = Math.min(canvas.width / this.#baseResolution.width, canvas.height / this.#baseResolution.height);
-        ctx.scale(minScale, minScale);
+        
+        const minScale = Math.min(this.canvas.width / this.#baseResolution.width, this.canvas.height / this.#baseResolution.height);
+        this.ctx.scale(minScale, minScale);
 
-        ctx.translate(-this.x, -this.y);
+        this.ctx.translate(-this.x, -this.y);
     }
 
     cameraStart(){
@@ -35,7 +36,7 @@ class Camera{
 
 
     screenToWorld(x, y){
-        const minScale = Math.min(canvas.width / this.#baseResolution.width, canvas.height / this.#baseResolution.height);
+        const minScale = Math.min(this.canvas.width / this.#baseResolution.width, this.canvas.height / this.#baseResolution.height);
 
         const x2 = x / minScale + this.x;
         const y2 = y / minScale + this.y;
@@ -101,10 +102,16 @@ export class RenderAPI extends ModuleAPI {
 export class RenderModule extends Module {
     constructor(engineAPI) {
         super(engineAPI);
+        this.ctx = engineAPI.ctx;
+        this.canvas = engineAPI.canvas;
+        this.renderAPI = engineAPI.getAPI('render');
     }
 
     preload(){
-        this.camera = new Camera(this);
+        this.ctx.imageSmoothingEnabled = false;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.camera = new Camera(this.renderAPI);
     }
 
     preloadLevel(level){
@@ -124,6 +131,8 @@ export class RenderModule extends Module {
     }
 
     update(dt){
+        this.#resizeCanvas();
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.camera.cameraStart();
         this.ctx.fillStyle = "black";
@@ -131,4 +140,9 @@ export class RenderModule extends Module {
 
         this.camera.cameraEnd();
     } 
+
+    #resizeCanvas(){
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
 }

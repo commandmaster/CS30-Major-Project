@@ -1,4 +1,4 @@
-import { ModuleAPI, Module } from "./moduleBase";
+import { ModuleAPI, Module } from "./moduleBase.js";
 
 export class AudioAPI extends ModuleAPI {
     constructor(engineAPI, module) {
