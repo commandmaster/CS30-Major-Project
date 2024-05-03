@@ -1,7 +1,18 @@
-import { ModuleAPI } from "./moduleBase";
-import { Module } from "./moduleBase";
+import { ModuleAPI, Module } from "./moduleBase";
+import { Component } from "./entityModule";
+
+
+class ScriptingComponent extends Component{
+    constructor(entity, parentModule, engineAPI, componentConfig){
+       super(entity, parentModule, engineAPI, componentConfig);
+
+
+    }
+}
 
 export class ScriptingAPI extends ModuleAPI {
+    static ScriptingComponent = ScriptingComponent;
+
     constructor(engineAPI, module) {
         super(engineAPI, module);
     }

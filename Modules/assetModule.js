@@ -1,5 +1,4 @@
-import { ModuleAPI } from "./moduleBase";
-import { Module } from "./moduleBase";
+import { ModuleAPI, Module } from "./moduleBase";
 
 export class AssetAPI extends ModuleAPI {
     constructor(engineAPI, module) {

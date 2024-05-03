@@ -1,20 +1,64 @@
-import { ModuleAPI } from "./moduleBase";
-import { Module } from "./moduleBase";
-
-
-
-export class PhysicsAPI extends ModuleAPI {
-    constructor(engineAPI, module) {
-        super(engineAPI, module);
-    }
-}
-
+import { ModuleAPI, Module } from "./moduleBase";
+import { Component } from "./entityModule";
 
 const Engine = Matter.Engine,
         Bodies = Matter.Bodies,
         Body = Matter.Body,
         Composite = Matter.Composite,
         Render = Matter.Render
+
+class TransformComponent extends Component{
+    constructor(entity, parentModule, engineAPI, componentConfig){
+        super(entity, parentModule, engineAPI, componentConfig);
+
+        this.position = componentConfig.position;
+        this.rotation = componentConfig.rotation;
+        this.scale = componentConfig.scale;
+    }
+}
+
+class RigidbodyComponent extends Component{
+    acceleration = {x: 0, y: 0};
+    velocity = {x: 0, y: 0};
+    position = {x: 0, y: 0};
+    rotation = 0;
+    angularVelocity = 0;
+    angularAcceleration = 0;
+    mass = 0;
+    coliders = [];
+
+    constructor(entity, parentModule, engineAPI, componentConfig){
+        super(entity, parentModule, engineAPI, componentConfig);
+        this.position = componentConfig.position;
+        this.rotation = componentConfig.rotation;
+        this.mass = componentConfig.mass;
+        
+        this.colliders = this.#generateColliders(componentConfig.colliders);
+        
+    }
+
+    #generateColliders(colliders){
+        return colliders.map(collider => {
+            switch(collider.type){
+                case 'rectangle':
+                    return Bodies.rectangle(collider.x, collider.y, collider.width, collider.height);
+                case 'circle':
+                    return Bodies.circle(collider.x, collider.y, collider.radius);
+            }
+        });
+    }
+}
+
+
+
+export class PhysicsAPI extends ModuleAPI {
+    static RigidbodyComponent = RigidbodyComponent;
+
+    constructor(engineAPI, module) {
+        super(engineAPI, module);
+    }
+}
+
 
 export class PhysicsModule extends Module {
       //#region Private Fields
@@ -69,28 +113,4 @@ export class PhysicsModule extends Module {
     }
 
 }
-
-
-
-class RigidbodyComponent{
-    acceleration = {x: 0, y: 0};
-    velocity = {x: 0, y: 0};
-    position = {x: 0, y: 0};
-    rotation = 0;
-    angularVelocity = 0;
-    angularAcceleration = 0;
-    momentum = 0;
-    mass = 0;
-    coliders = [];
-
-    constructor(physicsModule, x, y, mass, coliders){
-        this.physicsModule = physicsModule;
-
-        this.position.x = x;
-        this.position.y = y;
-        this.mass = mass;
-        this.coliders = coliders;
-    }
-}
-
 

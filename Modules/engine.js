@@ -5,6 +5,7 @@ import { PhysicsAPI, PhysicsModule } from "./physicsModule.js";
 import { EntityAPI, EntityModule } from "./entityModule.js";
 import { AssetAPI, AssetModule } from "./assetModule.js";
 
+import { ModuleAPI, Module } from "./moduleBase";
 
 
 export class EngineAPI{

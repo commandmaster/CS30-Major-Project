@@ -1,17 +1,5 @@
-import { ModuleAPI } from "./moduleBase";
-import { Module } from "./moduleBase";
+import { ModuleAPI, Module } from "./moduleBase";
 
-export class EntityAPI extends ModuleAPI {
-    constructor(engineAPI, module) {
-        super(engineAPI, module);
-    }
-}
-
-export class EntityModule extends Module {
-    constructor(engineAPI) {
-        super(engineAPI);
-    }
-}
 
 class Entity {
     components = new Map(); // Map<componentName, component>
@@ -40,27 +28,27 @@ class Entity {
 
     #createTransformComponent(component, parentModule, parentModuleAPI) {
         // Create a new transform component instance from the JSON data
-        const transform = parentModuleAPI.constructor.TransformComponent.fromJSON(component, parentModule, this.entityAPI.engineAPI);
+        const transform = parentModuleAPI.constructor.TransformComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
     }
 
     #createRigidbodyComponent(component, parentModule, parentModuleAPI) {
         // Create a new rigidbody component instance from the JSON data
-        const rigidbody = parentModuleAPI.constructor.RigidbodyComponent.fromJSON(component, parentModule, this.entityAPI.engineAPI);
+        const rigidbody = parentModuleAPI.constructor.RigidbodyComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
     }
 
     #createAnimatorComponent(component, parentModule, parentModuleAPI) {
         // Create a new animator component instance from the JSON data
-        const animator = parentModuleAPI.constructor.AnimatorComponent.fromJSON(component, parentModule, this.entityAPI.engineAPI);
+        const animator = parentModuleAPI.constructor.AnimatorComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
     }
 
     #createSpriteRendererComponent(component, parentModule, parentModuleAPI) {
         // Create a new sprite renderer component instance from the JSON data
-        const spriteRenderer = parentModuleAPI.constructor.SpriteRendererComponent.fromJSON(component, parentModule, this.entityAPI.engineAPI); 
+        const spriteRenderer = parentModuleAPI.constructor.SpriteRendererComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI); 
     }
 
     #createScriptingComponent(component, parentModule, parentModuleAPI) {
         // Create a new scripting component instance from the JSON data
-        const scripting = parentModuleAPI.constructor.ScriptingComponent.fromJSON(component, parentModule, this.entityAPI.engineAPI);
+        const scripting = parentModuleAPI.constructor.ScriptingComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
     }
  
     createComponent(component) {
@@ -94,4 +82,63 @@ class Entity {
         
     }
 }
+
+
+export class EntityAPI extends ModuleAPI {
+    constructor(engineAPI, module) {
+        super(engineAPI, module);
+    }
+}
+
+export class EntityModule extends Module {
+    constructor(engineAPI) {
+        super(engineAPI);
+    }
+}
+
+export class Component {
+    constructor(entity, parentModule, engineAPI, componentConfig) {
+        this.parentModule = parentModule; // Parent module of the component - One of the core engine systems/modules (e.g. Physics, Graphics, etc.)
+        this.engineAPI = engineAPI; // EngineAPI used to access the engine
+        this.entity = entity; // Entity the component is attached to
+        this.componentConfig = componentConfig; // Configuration data for the component
+    }
+
+    start(){
+        // Start the component
+    
+    }
+
+    update(){
+        // Update the component
+    }
+
+    
+    toJSON() {
+        // By default the component is serialized as a JSON string
+        // We can't use the default replacer function because it will cause a circular reference error with the entity, parentModule, and engineAPI, we only want to serialize the componentConfig
+        function replacer(key, value) {
+            // Check if the value is an instance of the component
+            const bannedProperties = ["entity", "parentModule", "engineAPI"]; // Properties that should not be serialized
+            const acceptable = !bannedProperties.includes(key); // Check if the key is not in the banned properties
+
+            return acceptable ? value : undefined; // Return the value if it is acceptable, otherwise return undefined
+        }
+    
+        return JSON.stringify(this, replacer, 2); // Return the JSON string of the component ignoring the banned properties
+    }
+
+    static fromJSON(entity, parentModule, engineAPI, json) {
+        if (typeof json === "string") {
+            // Parse the JSON string if it is a string turning it into a Object()
+            json = JSON.parse(json);
+        }
+
+
+        const component = new Component(entity, parentModule, engineAPI, json);
+        return component;
+    }
+}
+
+
 
