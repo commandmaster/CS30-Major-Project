@@ -22,8 +22,6 @@ class Entity {
         (typeof this.serializedComponents === "object" ? Object.values(this.serializedComponents) : this.serializedComponents).forEach(component => {
             this.createComponent(component); // Create the component
         });
-
-
     }
 
     #createTransformComponent(component, parentModule, parentModuleAPI) {
