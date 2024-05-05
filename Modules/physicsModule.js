@@ -77,8 +77,7 @@ class Vec2{
 
     static cross(v1, v2){
         // cross product of two vectors
-        // returns the magnitude of the cross product
-        return v1.mag * v2.mag * Math.sin(v2.angle - v1.angle);
+        return v1.x*v2.y - v1.y*v2.x;
     }
 
     static sub(v1, v2){
@@ -152,7 +151,8 @@ class Vec2{
     normalize(){
         // Normalize this vector
         const mag = this.#mag;
-        this.divide(mag);
+        this.#x /= mag;
+        this.#y /= mag;
 
         return this;
     }
@@ -170,9 +170,7 @@ class Vec2{
 
     cross(v){
         // Cross product of this vector and another vector
-        // Returns the magnitude of the cross product
-        this.#angle = Math.atan2(this.#y, this.#x);
-        return this.#mag * v.mag * Math.sin(v.angle - this.#angle);
+        return this.#x*v.y - this.#y*v.x;
     }
 
     clone(){
@@ -189,7 +187,7 @@ class Vec2{
 
     #calculateMag(){
         // Pythagorean theorem to calculate the magnitude of the vector
-        return Math.sqrt(this.#x ** 2 + this.#y ** 2);
+        return Math.sqrt((this.#x ** 2) + (this.#y ** 2));
     }
 
     #calculateNormalized(){
@@ -246,6 +244,14 @@ class Vec2{
     }
 }
 
+class BoundingBox {
+    constructor(position, width, height){
+        this.position = position;
+        this.width = width;
+        this.height = height;
+    }
+}
+
 class ConvexCollider{
     #vertices;
     #rotatedVertices;
@@ -260,6 +266,11 @@ class ConvexCollider{
         this.offset = new Vec2(offsetX, offsetY); // Offset of the collider from the center of the rigidbody
         this.#calculateWorldPosition(); // Calculate the world position of the collider
         this.#calculateVertices(); // Calculate the vertices of the collider
+
+        this.boundingBox = new BoundingBox(this.#position, 0, 0); // Bounding box of the collider
+        this.refresh(); // Refresh the collider (calculate the world position and vertices
+
+        
     }
 
     addVertex(vertex){
@@ -318,6 +329,12 @@ class ConvexCollider{
         // Refresh the collider
         this.#calculateWorldPosition(); // Calculate the world position of the collider
         this.#calculateVertices(); // Calculate the vertices of the collider
+        this.boundingBox.width = Math.max(...this.#rotatedVertices.map(vertex => vertex.x)) - Math.min(...this.#rotatedVertices.map(vertex => vertex.x)); // Calculate the width of the bounding box
+        this.boundingBox.height = Math.max(...this.#rotatedVertices.map(vertex => vertex.y)) - Math.min(...this.#rotatedVertices.map(vertex => vertex.y)); // Calculate the height of the bounding box
+
+        const boundingBoxPosition = new Vec2(this.#position.x - this.boundingBox.width / 2, this.#position.y - this.boundingBox.height / 2); // Initialize the position of the bounding box
+
+        this.boundingBox.position = boundingBoxPosition; // Set the position of the bounding box
     }
 
     debugDraw(){
@@ -538,22 +555,56 @@ class Rigidbody{
     }
 }
 
-class CollisionData{
-    constructor(axis, overlap, pointOfCollision, radius1, radius2){
-        this.axis = axis; // Minimum translation vector (MTV) axis
-        this.overlap = overlap; // Overlap distance
-        this.pointOfCollision = pointOfCollision; // Point of collision in world space
 
-        this.radius1 = radius1; // Distance from the center of the first collider to the point of collision
-        this.radius2 = radius2; // Distance from the center of the second collider to the point of collision
+
+class CollisionData{
+    constructor(axis, overlap, collisionPoint){
+        this.axis = Vec2.normalize(axis); // Minimum translation vector (MTV) axis
+        this.overlap = overlap; // Overlap distance
+        this.collisionPoint = collisionPoint; // Point of collision
     }
 }  
+
+
+class AABB{
+    static checkCollision(boundingBox1, boundingBox2){
+        const width1 = boundingBox1.width; // Get the width of the first bounding box
+        const height1 = boundingBox1.height; // Get the height of the first bounding box
+        const width2 = boundingBox2.width; // Get the width of the second bounding box
+        const height2 = boundingBox2.height; // Get the height of the second bounding box
+
+        const x1 = boundingBox1.position.x; // Get the x position of the first bounding box
+        const y1 = boundingBox1.position.y; // Get the y position of the first bounding box
+        const x2 = boundingBox2.position.x; // Get the x position of the second bounding box
+        const y2 = boundingBox2.position.y; // Get the y position of the second bounding box
+
+
+        if (!(x1 < x2 + width2 && x1 + width1 > x2 && y1 < y2 + height2 && y1 + height1 > y2)) return false; // Return false if there is no overlap
+
+        // find min overlap
+        const overlapX = Math.min(x1 + width1 - x2, x2 + width2 - x1); // Calculate the overlap in the x direction
+        const overlapY = Math.min(y1 + height1 - y2, y2 + height2 - y1); // Calculate the overlap in the y direction
+
+        if (overlapX < overlapY){
+            return new CollisionData(new Vec2(overlapX, 0).normalized, overlapX); // Return the collision data for the x direction
+        } else {
+            return new CollisionData(new Vec2(0, overlapY).normalized, overlapY); // Return the collision data for the y direction
+        }
+    }
+}
+
 
 class SAT{
     // Separating Axis Theorem - Used for collision detection between convex shapes - Theory learned at https://dyn4j.org/2010/01/sat/
     static checkCollision(collider1, collider2){
+        // Ignore colliders not in bounds 
+        if (AABB.checkCollision(collider1.boundingBox, collider2.boundingBox) === false) return false; // Return false if there is no overlap
+
+
         const axes1 = SAT.getAxes(collider1); // Get the axes of the first collider to test against
         const axes2 = SAT.getAxes(collider2); // Get the axes of the second collider to test against
+
+
 
         // debug draw the axes
         for (const axis of axes1){
@@ -568,7 +619,10 @@ class SAT{
                 ctx.closePath();
                 
             }
-    
+            
+
+            if (Math.sqrt(axis.x ** 2 + axis.y ** 2) != 1) console.log(axis)
+
             const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
             const task = new renderAPI.constructor.RenderTask(renderFunc);
             renderAPI.addTask(task);
@@ -586,7 +640,10 @@ class SAT{
                 ctx.closePath();
                 
             }
-    
+            
+            if (Math.sqrt(axis.x ** 2 + axis.y ** 2) != 1) console.log(axis)
+
+
             const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
             const task = new renderAPI.constructor.RenderTask(renderFunc);
             renderAPI.addTask(task);
@@ -618,7 +675,7 @@ class SAT{
             const projection1 = SAT.projectAxis(axis, collider1); // Project the first collider onto the axis
             const projection2 = SAT.projectAxis(axis, collider2); // Project the second collider onto the axis
 
-            console.log(projection1, projection2)
+            //console.log(projection1, projection2)
 
            if (projection1.min > projection2.max || projection2.min > projection1.max){ 
                 return false; // Return false if there is no overlap
@@ -659,13 +716,19 @@ class SAT{
             }
         }
 
-        // flip the mtv if the dot product of the mtv axis and the vector from the first collider to the second collider is greater than 0 (the mtv axis is pointing in the wrong direction)
-        if (Vec2.sub(collider1.position, collider2.position).dot(mtvAxis) > 0){
-            mtvAxis.y *= -1;
+ 
+
+
+        const unitMtvDirection = mtvAxis.clone().normalize(); // Get the unit vector of the MTV axis - Use this as the axis of the MTV
+
+        const center = Vec2.sub(collider2.position, collider1.position); // Get the vector from the center of the first collider to the center of the second collider
+        if (center.dot(unitMtvDirection) < 0){
+            unitMtvDirection.scale(-1);
         }
 
-        const unitMtvDirection = mtvAxis.normalized; // Get the unit vector of the MTV axis - Use this as the axis of the MTV
         const mtv = Vec2.scale(unitMtvDirection, mtvOverlap); // Scale the unit vector by the overlap to get the MTV
+        
+
 
         // draw the MTV
         const renderFunc = (canvas, ctx) => {
@@ -686,9 +749,9 @@ class SAT{
         const r1 = Vec2.sub(collider1.position, collider2.position).dot(unitMtvDirection); // Get the distance from the center of the first collider to the point of collision
         const r2 = Vec2.sub(collider2.position, collider1.position).dot(unitMtvDirection); // Get the distance from the center of the second collider to the point of collision
 
-        const collisionData = new CollisionData(unitMtvDirection, mtvOverlap, mtv, r1, r2); // Create the collision data object)
+        const collisionData = new CollisionData(unitMtvDirection, mtvOverlap); // Create the collision data object)
 
-        console.log(mtv)
+    
 
         return collisionData // Return the collision data
     }
@@ -701,15 +764,14 @@ class SAT{
 
     static projectAxis(axis, collider){
         // Project the collider onto the axis and return the min and max values
-        let min = Vec2.dot(axis, collider.vertices[0]); // Dot product of the first vertex and the axis
-        let max = min; // Initialize the max value to the min value for now
-        
+        let min = Infinity; // Initialize the min value to infinity
+        let max = -Infinity; // Initialize the max value to -infinity
 
         for (const vertex of collider.vertices){
-            const dotProduct = axis.dot(vertex) // Dot product of the vertex and the axis (projection of the vertex onto the axis)
+            const projecedPoint = SAT.projectVertex(vertex, axis); // Project the vertex onto the axis
 
-            min = Math.min(min, dotProduct); // Update the min value if the dot product is less than the current min
-            max = Math.max(max, dotProduct); // Update the max value if the dot product is greater than the current max
+            min = Math.min(min, projecedPoint); // Update the min value if the dot product is less than the current min
+            max = Math.max(max, projecedPoint); // Update the max value if the dot product is greater than the current max
             
         }
         
@@ -723,15 +785,21 @@ class SAT{
             const vertex1 = collider.vertices[i]; // Get the first vertex
             const vertex2 = collider.vertices[(i + 1) % collider.vertices.length]; // Get the second vertex (wraps around to the first vertex if the last vertex is reached)
 
-            const edge = Vec2.sub(vertex1, vertex2); // Get the edge vector (vector from vertex1 to vertex2)
+            const edge = Vec2.sub(vertex2, vertex1); // Get the edge vector (vector from vertex1 to vertex2)
 
-            const normal = new Vec2(-edge.y, edge.x).normalize(); // Get the normal vector of the edge vector (perpendicular to the edge vector)
+            const normal = new Vec2(-edge.y, edge.x).normalized; // Get the normal vector of the edge vector (perpendicular to the edge vector)
 
             axes.push(normal); // Add the normal vector to the axes array
         }
 
         return axes; // Return the axes array
     }
+    
+    static projectVertex(vertex, axis){
+        // Project a vertice onto an axis
+        return Vec2.dot(vertex, axis); // Dot product of the vertice and the axis (projection of the vertice onto the axis)
+    }
+
 
 
 
@@ -746,20 +814,19 @@ class CollisionSolver{
         const collisionNormal = collisionData.axis; // Get the collision normal (MTV axis)
         const seperationDistance = collisionData.overlap; // Get the seperation distance (overlap distance)
         const seperationAxis = collisionNormal.clone(); // Clone the collision normal to get the seperation axis
-        const pointOfCollision = collisionData.pointOfCollision; // Get the point of collision
-        const r1 = collisionData.radius1; // Get the distance from the center of the first rigidbody to the point of collision
-        const r2 = collisionData.radius2; // Get the distance from the center of the second rigidbody to the point of collision
+        
 
         
         // Apply the minimum translation vector (MTV) to separate the rigidbodies
-        //const massRatio1 = 1 - (rigidbody1.mass / (rigidbody1.mass + rigidbody2.mass)); // Calculate the mass ratio of the first rigidbody
-        //const massRatio2 = 1 - (rigidbody2.mass / (rigidbody1.mass + rigidbody2.mass)); // Calculate the mass ratio of the second rigidbody
+        const massRatio1 = 1 - (rigidbody1.mass / (rigidbody1.mass + rigidbody2.mass)); // Calculate the mass ratio of the first rigidbody
+        const massRatio2 = 1 - (rigidbody2.mass / (rigidbody1.mass + rigidbody2.mass)); // Calculate the mass ratio of the second rigidbody
 
-        const massRatio1 = 0.5;
-        const massRatio2 = 0.5;
+
 
         const mtv1 = Vec2.scale(seperationAxis, seperationDistance * massRatio1); // Scale the seperation axis by a ratio of the seperation distance and the mass of the first rigidbody
         const mtv2 = Vec2.scale(seperationAxis, seperationDistance * massRatio2); // Scale the seperation axis by a ratio of the seperation distance and the mass of the second rigidbody in the opposite direction
+
+        console.log(mtv1, mtv2)
 
         rigidbody1.position.add(mtv1); // Apply the MTV to the first rigidbody
         rigidbody2.position.sub(mtv2); // Apply the MTV in the opposite direction to the second rigidbody
@@ -775,23 +842,23 @@ class CollisionSolver{
         const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * (1 + coefficientOfRestitution) * (-1); // Calculate the relative velocity along the collision normal
 
         const totalInverseMass = (1 / rigidbody1.mass) + (1 / rigidbody2.mass); // Calculate the total inverse mass of the two rigidbodies
-
+        const angularEffect = 0; // Calculate the angular effect of the two rigidbodies (NOT IMPLEMENTED YET)
     
 
         // calculate the final impulse
-        const impulse = relativeVelocityAlongNormal / (totalInverseMass); // Calculate the impulse to apply to the rigidbodies
+        const impulse = relativeVelocityAlongNormal / (totalInverseMass + angularEffect); // Calculate the impulse to apply to the rigidbodies
 
 
         rigidbody1.velocity.add(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
         rigidbody2.velocity.sub(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
 
 
-        // Next calculate the angular impulse to apply to the rigidbodies
-        const angularImpulse1 = Vec2.cross(Vec2.sub(pointOfCollision, rigidbody1.position), impulse); // Calculate the angular impulse to apply to the first rigidbody
-        rigidbody1.angularVelocity += angularImpulse1 / rigidbody1.inertiaTensor; // Apply the angular impulse to the first rigidbody
+        // // Next calculate the angular impulse to apply to the rigidbodies
+        // const angularImpulse1 = Vec2.cross(Vec2.sub(pointOfCollision, rigidbody1.position), impulse); // Calculate the angular impulse to apply to the first rigidbody
+        // rigidbody1.angularVelocity += angularImpulse1 / rigidbody1.inertiaTensor; // Apply the angular impulse to the first rigidbody
 
-        const angularImpulse2 = Vec2.cross(Vec2.sub(pointOfCollision, rigidbody2.position), impulse); // Calculate the angular impulse to apply to the second rigidbody
-        rigidbody2.angularVelocity -= angularImpulse2 / rigidbody2.inertiaTensor; // Apply the angular impulse to the second rigidbody
+        // const angularImpulse2 = Vec2.cross(Vec2.sub(pointOfCollision, rigidbody2.position), impulse); // Calculate the angular impulse to apply to the second rigidbody
+        // rigidbody2.angularVelocity -= angularImpulse2 / rigidbody2.inertiaTensor; // Apply the angular impulse to the second rigidbody
 
 
 
@@ -904,6 +971,8 @@ export class PhysicsModule extends Module{
             
             rigidBody2.velocity = new Vec2(-0.1, 0);
         });
+
+        rigidBody1.velocity = new Vec2(0.05, 0);
     }
 
     update(dt){
