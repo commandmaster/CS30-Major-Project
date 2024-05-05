@@ -1,10 +1,13 @@
 export class ModuleAPI{
-    constructor(engineAPI, module){
+    constructor(engineAPI){
         this.engineAPI = engineAPI;
         this.engine = engineAPI.engine;
         this.ctx = engineAPI.ctx;
         this.canvas = engineAPI.canvas;
-        this.module = module;
+    }
+
+    getModule(moduleName){
+        return this.engineAPI.getModule(moduleName);
     }
 }
 

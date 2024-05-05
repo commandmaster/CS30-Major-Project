@@ -4,6 +4,7 @@ import { RenderAPI, RenderModule } from "./renderModule.js";
 import { PhysicsAPI, PhysicsModule } from "./physicsModule.js";
 import { EntityAPI, EntityModule } from "./entityModule.js";
 import { AssetAPI, AssetModule } from "./assetModule.js";
+import { ParticleAPI, ParticleModule } from "./particleModule.js";
 
 import { ModuleAPI, Module } from "./moduleBase.js";
 
@@ -18,17 +19,18 @@ export class EngineAPI{
 
      
         this.APIs = {};
-        this.#loadAPIs();
+        this.loadAPIs();
     }
 
 
-    #loadAPIs(){
-        this.APIs.audio = new AudioAPI(this, this.engine.modules.audio);
-        this.APIs.input = new InputAPI(this, this.engine.modules.input);
-        this.APIs.render = new RenderAPI(this, this.engine.modules.render);
-        this.APIs.physics = new PhysicsAPI(this, this.engine.modules.physics);
-        this.APIs.entity = new EntityAPI(this, this.engine.modules.entity);
-        this.APIs.asset = new AssetAPI(this, this.engine.modules.asset);
+    loadAPIs(){
+        this.APIs.audio = new AudioAPI(this);
+        this.APIs.input = new InputAPI(this);
+        this.APIs.render = new RenderAPI(this);
+        this.APIs.physics = new PhysicsAPI(this);
+        this.APIs.entity = new EntityAPI(this);
+        this.APIs.asset = new AssetAPI(this);
+        this.APIs.particle = new ParticleAPI(this);
     }
 
 
@@ -49,7 +51,11 @@ export class EngineAPI{
 
         throw new Error(`Module ${module} does not exist`);
     }
-    
+
+    getModule(module){
+        if (typeof this.engine.modules[module] === 'undefined') throw new Error(`Module ${module} does not exist (undefined)`);
+        return this.engine.modules[module];
+    }
 }
 
 export class Engine{
@@ -61,9 +67,7 @@ export class Engine{
         this.canvas = canvas;
 
         this.api = new EngineAPI(context, canvas, this);
-
-        this.#loadModules();
-
+        this.loadModules();
         
     }
 
@@ -79,13 +83,14 @@ export class Engine{
         });
     }
 
-    #loadModules(){
+    loadModules(){
         this.modules.asset = new AssetModule(this.api); 
         this.modules.audio = new AudioModule(this.api);
         this.modules.input = new InputModule(this.api);
         this.modules.render = new RenderModule(this.api);
         this.modules.physics = new PhysicsModule(this.api);
         this.modules.entity = new EntityModule(this.api);
+        this.modules.particle = new ParticleModule(this.api);
     }
 
     async loadLevel(level){
@@ -133,7 +138,19 @@ export class Engine{
     }
 
     start(){
-        for (let module in this.modules){
+        const priorityMap = new Map();
+        priorityMap.set('asset', 0);
+        priorityMap.set('audio', 1);
+        priorityMap.set('input', 2);
+        priorityMap.set('physics', 3);
+        priorityMap.set('entity', 4);
+        priorityMap.set('particle', 5);
+        priorityMap.set('render', 6);
+
+        const sortedModules = Object.keys(this.modules).sort((a, b) => priorityMap.get(a) - priorityMap.get(b));
+
+
+        for (let module of sortedModules){
             if (typeof this.modules[module].start === 'function'){
                 this.modules[module].start();
             }
@@ -146,14 +163,28 @@ export class Engine{
     }
 
     update(dt){
-        for (let module in this.modules){
+        const priorityMap = new Map();
+        priorityMap.set('asset', 0);
+        priorityMap.set('audio', 1);
+        priorityMap.set('input', 2);
+        priorityMap.set('physics', 3);
+        priorityMap.set('entity', 4);
+        priorityMap.set('particle', 5);
+        priorityMap.set('render', 6);
+
+        const sortedModules = Object.keys(this.modules).sort((a, b) => priorityMap.get(a) - priorityMap.get(b));
+        
+        
+
+        dt = performance.now() - this.#lastUpdate;
+        this.#lastUpdate = performance.now();
+
+        for (let module of sortedModules){
             if (typeof this.modules[module].update === 'function'){
                 this.modules[module].update(dt);
             }
         }
 
-        dt = performance.now() - this.#lastUpdate;
-        this.#lastUpdate = performance.now();
         requestAnimationFrame(() => this.update(dt));
     }
 }

@@ -38,8 +38,8 @@ class Camera{
     screenToWorld(x, y){
         const minScale = Math.min(this.canvas.width / this.#baseResolution.width, this.canvas.height / this.#baseResolution.height);
 
-        const x2 = x / minScale + this.x;
-        const y2 = y / minScale + this.y;
+        const x2 = x / minScale + this.x - this.canvas.width / 2 / minScale;
+        const y2 = y / minScale + this.y - this.canvas.height / 2 / minScale;
         return {x: x2, y: y2};
         
     }
@@ -87,15 +87,37 @@ class SpriteRendererComponent extends Component{
     }
 }
 
+class RenderTask{
+    constructor(renderingFunction){
+        this.renderingFunction = renderingFunction;
+    }
+
+    render(canvas, ctx){
+        ctx.save();
+        this.renderingFunction(canvas, ctx);
+        ctx.restore();
+    }
+}
 
 export class RenderAPI extends ModuleAPI {
     static Camera = Camera;
     static AnimatorComponent = AnimatorComponent;
     static SpriteRendererComponent = SpriteRendererComponent;
+    static RenderTask = RenderTask;
 
     baseResolution = {width: 1920, height: 1080};
-    constructor(engineAPI, module) {
-        super(engineAPI, module);
+    constructor(engineAPI) {
+        super(engineAPI);
+    }
+
+    addTask(renderTask){
+        const module = super.getModule('render');
+        module.renderTasks.push(renderTask);
+    }
+
+    getCamera(){
+        const module = super.getModule('render');
+        return module.camera;
     }
 }
 
@@ -105,6 +127,7 @@ export class RenderModule extends Module {
         this.ctx = engineAPI.ctx;
         this.canvas = engineAPI.canvas;
         this.renderAPI = engineAPI.getAPI('render');
+        this.renderTasks = [];
     }
 
     preload(){
@@ -127,18 +150,24 @@ export class RenderModule extends Module {
     }
 
     start(){
-        
+       
     }
 
     update(dt){
+        
         this.#resizeCanvas();
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.camera.cameraStart();
         this.ctx.fillStyle = "black";
-        this.ctx.fillRect(0, 0, 100, 100);
+
+        for(const renderTask of this.renderTasks){
+            if (typeof renderTask.render !== 'function' || typeof renderTask.render === 'undefined' || renderTask.render === null) throw new Error("Render task is not valid.");
+            renderTask.render(this.canvas, this.ctx);
+        }
 
         this.camera.cameraEnd();
+        this.renderTasks = [];
     } 
 
     #resizeCanvas(){

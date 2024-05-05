@@ -13,8 +13,8 @@ class ScriptingComponent extends Component{
 export class ScriptingAPI extends ModuleAPI {
     static ScriptingComponent = ScriptingComponent;
 
-    constructor(engineAPI, module) {
-        super(engineAPI, module);
+    constructor(engineAPI) {
+        super(engineAPI);
     }
 }
 

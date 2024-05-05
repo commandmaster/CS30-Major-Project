@@ -1,8 +1,8 @@
 import { ModuleAPI, Module } from "./moduleBase.js";
 
 export class ParticleAPI extends ModuleAPI {
-    constructor(engineAPI, module) {
-        super(engineAPI, module);
+    constructor(engineAPI) {
+        super(engineAPI);
     }
 }
 
