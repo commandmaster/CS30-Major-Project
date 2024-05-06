@@ -447,7 +447,7 @@ class Rigidbody{
     #mass = 0; // Mass of the rigidbody
     #bounce = 0; // Coefficient of restitution (bounciness) of the rigidbody
     #colliders = []; // Colliders attached to the rigidbody
-    #inertiaTensor = 10000; // Inertia tensor of the rigidbody
+    #inertiaTensor = 20000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
     #engineAPI; // EngineAPI used to access the engine
     constructor(engineAPI, position, rotation, mass, bounce, colliders){
@@ -1053,14 +1053,22 @@ class CollisionSolver{
             return {closestContactPoint, r};
         }
         
-        const rigidBody1DistToContactPoint = closestContactPointToCenterOfMass(contactPoints, rigidbody1).r; // Calculate the vector from the center of mass of the first rigidbody to the point of collision
-        const rigidBody2DistToContactPoint = closestContactPointToCenterOfMass(contactPoints, rigidbody2).r; // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+        const contactPointInfo1 = closestContactPointToCenterOfMass(contactPoints, rigidbody1); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
+        const contactPointInfo2 = closestContactPointToCenterOfMass(contactPoints, rigidbody2); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+
+
+        const rigidBody1DistToContactPoint = contactPointInfo1.r; // Calculate the vector from the center of mass of the first rigidbody to the point of collision
+        const rigidBody2DistToContactPoint = contactPointInfo2.r; // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+
+        const rigidBody1ContactPoint = contactPointInfo1.closestContactPoint; // Calculate the vector from the center of mass of the first rigidbody to the point of collision
+        const rigidBody2ContactPoint = contactPointInfo2.closestContactPoint; // Calculate the vector from the center of mass of the second rigidbody to the point of collision
 
         const angularImpulse1 = Vec2.cross(rigidBody1DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the first rigidbody
-        rigidbody1.angularVelocity += angularImpulse1 / rigidbody1.inertiaTensor; // Apply the angular impulse to the first rigidbody
+        // Apply the angular impulse to the first rigidbody
+        rigidbody1.angularVelocity += (angularImpulse1 / rigidbody1.inertiaTensor);
 
         const angularImpulse2 = Vec2.cross(rigidBody2DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the second rigidbody
-        rigidbody2.angularVelocity -= angularImpulse2 / rigidbody2.inertiaTensor; // Apply the angular impulse to the second rigidbody
+        rigidbody2.angularVelocity += (angularImpulse2 / rigidbody2.inertiaTensor); 
 
         
         console.log(rigidbody2.inertiaTensor)
