@@ -486,7 +486,7 @@ class Rigidbody{
     #position = new Vec2(0, 0); // Position of the rigidbody
     #rotation = 0; // Rotation of the rigidbody
     #mass = 0; // Mass of the rigidbody
-    #bounce = 0; // Coefficient of restitution (bounciness) of the rigidbody
+    #bounce = 1; // Coefficient of restitution (bounciness) of the rigidbody
     #colliders = []; // Colliders attached to the rigidbody
     #inertiaTensor = 100000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
@@ -1075,10 +1075,10 @@ class CollisionSolver{
 
 
         // linear impulse calculations
-        const coefficientOfRestitution = rigidbody1.bounce * rigidbody2.bounce; // Combine the bounciness of the two rigidbodies
+        const coefficientOfRestitution = Math.min(rigidbody1.bounce, rigidbody2.bounce); // Combine the bounciness of the two rigidbodies
        
 
-        const relativeVelocity = Vec2.sub(rigidbody2.velocity, rigidbody1.velocity); // Calculate the relative velocity of the two rigidbodies
+        const relativeVelocity = Vec2.sub(rigidbody1.velocity, rigidbody2.velocity); // Calculate the relative velocity of the two rigidbodies
         const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * (1 + coefficientOfRestitution) * (-1); // Calculate the relative velocity along the collision normal
 
         const totalInverseMass = (1 / rigidbody1.mass) + (1 / rigidbody2.mass); // Calculate the total inverse mass of the two rigidbodies
@@ -1087,16 +1087,16 @@ class CollisionSolver{
 
         const crossedR1 = Vec2.cross(rigidBody1DistToContactPoint, collisionNormal) * inverseInertiaTensor1; // Calculate the cross product of the vector from the center of mass of the first rigidbody to the point of collision and the collision normal
         const crossedR2 = Vec2.cross(rigidBody2DistToContactPoint, collisionNormal) * inverseInertiaTensor2; // Calculate the cross product of the vector from the center of mass of the second rigidbody to the point of collision and the collision normal
-        console.log(crossedR1 )
+
         const angularEffect = Vec2.dot(collisionNormal, (rigidBody1DistToContactPoint.clone().scale(crossedR1)).add(rigidBody2DistToContactPoint.clone().scale(crossedR2))); // Calculate the angular effect of the two rigidbodies (NOT IMPLEMENTED YET)
-        console.log(angularEffect)
+
 
         // calculate the final impulse
         const impulse = relativeVelocityAlongNormal / (totalInverseMass + angularEffect); // Calculate the impulse to apply to the rigidbodies
 
 
-        rigidbody1.velocity.add(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
-        rigidbody2.velocity.sub(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
+        rigidbody1.velocity.sub(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
+        rigidbody2.velocity.add(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
 
 
         // Next calculate the angular impulse to apply to the rigidbodies
@@ -1104,8 +1104,8 @@ class CollisionSolver{
         const angularImpulse1 = Vec2.cross(rigidBody1DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the first rigidbody
         const angularImpulse2 = Vec2.cross(rigidBody2DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the second rigidbody
 
-        rigidbody1.angularVelocity += (angularImpulse2 / rigidbody1.inertiaTensor);
-        rigidbody2.angularVelocity += (angularImpulse1 / rigidbody2.inertiaTensor); 
+        rigidbody1.angularVelocity += (angularImpulse1 / rigidbody1.inertiaTensor);
+        rigidbody2.angularVelocity -= (angularImpulse2 / rigidbody2.inertiaTensor); 
 
         console.log(rigidBody1DistToContactPoint, rigidBody2DistToContactPoint)
         console.log(angularImpulse1, angularImpulse2)
