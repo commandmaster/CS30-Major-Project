@@ -314,7 +314,8 @@ class ConvexCollider{
         this.#calculateWorldPosition(); // Calculate the world position of the collider
         this.#calculateVertices(); // Calculate the vertices of the collider
 
-        this.boundingBox = new BoundingBox(this.#position, 0, 0); // Bounding box of the collider
+        this.boundingBox = this.#precomputeBoundingBox(); // Bounding box of the collider
+        //this.boundingBox = new BoundingBox(this.#position, 0, 0); // Bounding box of the collider
         this.refresh(); // Refresh the collider (calculate the world position and vertices
 
         this.type = 'convex'; // Type of the collider
@@ -365,29 +366,61 @@ class ConvexCollider{
         return vertices;
     }
 
-    #calculateBoundingBox(){
-        // Calculate the bounding box of the collider
+    #precomputeBoundingBox(){
+        if (this.rigidBody.mass === 0 || this.rigidBody.mass === Infinity || this.rigidBody.isStatic === true) {
+            // find min and max x and y values of the vertices
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
 
-        // Find the minimum and maximum x and y values of the vertices
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
+            for (let i = 0; i < this.#rotatedVertices.length; i++){
+                const vertex = this.#rotatedVertices[i];
+                const vertexPosition = Vec2.add(vertex, this.#position);
+                minX = Math.min(minX, vertexPosition.x);
+                minY = Math.min(minY, vertexPosition.y);
+                maxX = Math.max(maxX, vertexPosition.x);
+                maxY = Math.max(maxY, vertexPosition.y);
+            }
 
-        for (let i = 0; i < this.#rotatedVertices.length; i++){
-            const vertex = this.#rotatedVertices[i];
-            minX = Math.min(minX, vertex.x);
-            minY = Math.min(minY, vertex.y);
-            maxX = Math.max(maxX, vertex.x);
-            maxY = Math.max(maxY, vertex.y);
+            const width = maxX - minX;
+            const height = maxY - minY;
+
+            return new BoundingBox(this.#position.clone(), width, height);
         }
-        const boundingBoxPosition = new Vec2(minX, minY); // Set the position of the bounding box
-        const width = maxX - minX; // Calculate the width of the bounding box
-        const height = maxY - minY; // Calculate the height of the bounding box
 
-        this.boundingBox.position = boundingBoxPosition; // Set the position of the bounding box
-        this.boundingBox.width = width; // Set the width of the bounding box
-        this.boundingBox.height = height; // Set the height of the bounding box
+
+        const boundingBox = new BoundingBox(this.#position.clone(), 0, 0);
+        let vertexPositionSqDist = -Infinity;
+
+        for (let i = 0; i < this.#vertices.length; i++){
+            // find the farthest possible location for the vertex in the collider
+            const vertex = this.#vertices[i];
+            const vertexPosition = Vec2.add(vertex, this.#position);
+            const sqDist = Vec2.sqDist(this.#position, vertexPosition);
+
+            if (sqDist > vertexPositionSqDist){
+                vertexPositionSqDist = sqDist;
+            }
+        }
+
+        const width = Math.sqrt(vertexPositionSqDist) * 2;
+        const height = width;
+
+        boundingBox.width = width;
+        boundingBox.height = height;
+
+    
+
+        boundingBox.position.sub(new Vec2(width / 2, height / 2));
+
+        return boundingBox;
+    }
+
+    #calculateBoundingBox(){
+        // // Calculate the bounding box of the collider
+        this.boundingBox.position = Vec2.sub(this.#position, new Vec2(this.boundingBox.width / 2, this.boundingBox.height / 2));
+        this.boundingBox.position.scale(-1);
     }
 
     update(dt){
@@ -402,6 +435,7 @@ class ConvexCollider{
         this.rotation = this.rigidBody.rotation; // Set the rotation of the collider to the rotation of the rigidbody
         this.#calculateWorldPosition(); // Calculate the world position of the collider
         this.#calculateVertices(); // Calculate the vertices of the collider
+        
         this.#calculateBoundingBox(); // Calculate the bounding box of the collider
     }
 
@@ -420,11 +454,14 @@ class ConvexCollider{
             ctx.closePath();
 
             //Draw the bounding box
-            // ctx.beginPath();
-            // ctx.strokeStyle = 'blue';
-            // ctx.strokeRect(this.boundingBox.position.x, this.boundingBox.position.y, this.boundingBox.width, this.boundingBox.height);
-            // ctx.stroke();
-            // ctx.closePath();
+            const shouldDrawBoundingBox = false;
+
+            if (!shouldDrawBoundingBox) return;
+            ctx.beginPath();
+            ctx.strokeStyle = 'blue';
+            ctx.strokeRect(this.boundingBox.position.x, this.boundingBox.position.y, this.boundingBox.width, this.boundingBox.height);
+            ctx.stroke();
+            ctx.closePath();
 
         }
 
@@ -480,13 +517,13 @@ class CircleCollider{
 
 class Rigidbody{
     #velocity = new Vec2(0, 0); // Linear velocity
-    #acceleration = new Vec2(0, 2); // Linear acceleration
+    #acceleration = new Vec2(0, 20); // Linear acceleration
     #angularVelocity = 0; // Angular velocity
     #angularAcceleration = 0; // Angular acceleration
     #position = new Vec2(0, 0); // Position of the rigidbody
     #rotation = 0; // Rotation of the rigidbody
     #mass = 0; // Mass of the rigidbody
-    #bounce = 1; // Coefficient of restitution (bounciness) of the rigidbody
+    #bounce = 0.5; // Coefficient of restitution (bounciness) of the rigidbody
     #colliders = []; // Colliders attached to the rigidbody
     #inertiaTensor = 100000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
@@ -495,7 +532,6 @@ class Rigidbody{
         // Initialize the rigidbody with it's basic properties
         this.#engineAPI = engineAPI; // EngineAPI used to access the engine
         this.#position = (position instanceof Vec2) ? position : new Vec2(position.x, position.y); // Position of the rigidbody (make sure it is a Vec2 by checking if it is an instance of Vec2)
-        console.log(this.#position);
         this.#rotation = rotation;
         this.#mass = mass;
         this.#bounce = bounce; // Coefficient of restitution (bounciness) of the rigidbody, 0 = no bounce, 1 = perfect bounce,  1 < = gain energy
@@ -1072,43 +1108,39 @@ class CollisionSolver{
             rigidBody2DistToContactPoint = Vec2.sub(collisionPoint, rigidbody2.position); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
         }
 
-
+        
+       
 
         // linear impulse calculations
         const coefficientOfRestitution = Math.min(rigidbody1.bounce, rigidbody2.bounce); // Combine the bounciness of the two rigidbodies
        
 
         const relativeVelocity = Vec2.sub(rigidbody1.velocity, rigidbody2.velocity); // Calculate the relative velocity of the two rigidbodies
-        const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * (1 + coefficientOfRestitution) * (-1); // Calculate the relative velocity along the collision normal
+        const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * -(1 + coefficientOfRestitution); // Calculate the relative velocity along the collision normal
 
         const totalInverseMass = (1 / rigidbody1.mass) + (1 / rigidbody2.mass); // Calculate the total inverse mass of the two rigidbodies
         const inverseInertiaTensor1 = 1 / rigidbody1.inertiaTensor; // Calculate the inverse inertia tensor of the first rigidbody
         const inverseInertiaTensor2 = 1 / rigidbody2.inertiaTensor; // Calculate the inverse inertia tensor of the second rigidbody
 
-        const crossedR1 = Vec2.cross(rigidBody1DistToContactPoint, collisionNormal) * inverseInertiaTensor1; // Calculate the cross product of the vector from the center of mass of the first rigidbody to the point of collision and the collision normal
-        const crossedR2 = Vec2.cross(rigidBody2DistToContactPoint, collisionNormal) * inverseInertiaTensor2; // Calculate the cross product of the vector from the center of mass of the second rigidbody to the point of collision and the collision normal
+        const crossedR1 = Vec2.cross(rigidBody1DistToContactPoint, collisionNormal); // Calculate the cross product of the vector from the center of mass of the first rigidbody to the point of collision and the collision normal
+        const crossedR2 = Vec2.cross(rigidBody2DistToContactPoint, collisionNormal); // Calculate the cross product of the vector from the center of mass of the second rigidbody to the point of collision and the collision normal
 
-        const angularEffect = Vec2.dot(collisionNormal, (rigidBody1DistToContactPoint.clone().scale(crossedR1)).add(rigidBody2DistToContactPoint.clone().scale(crossedR2))); // Calculate the angular effect of the two rigidbodies (NOT IMPLEMENTED YET)
-
+        const angularEffect = crossedR1 * inverseInertiaTensor1 * crossedR1 + crossedR2 * inverseInertiaTensor2 * crossedR2; // Calculate the angular effect of the two rigidbodies
 
         // calculate the final impulse
         const impulse = relativeVelocityAlongNormal / (totalInverseMass + angularEffect); // Calculate the impulse to apply to the rigidbodies
+        const impulseAlongNormal = collisionNormal.clone().scale(impulse); // Calculate the impulse along the collision normal
 
-
-        rigidbody1.velocity.sub(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
-        rigidbody2.velocity.add(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
+        rigidbody1.velocity.sub(Vec2.scale(impulseAlongNormal, 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
+        rigidbody2.velocity.add(Vec2.scale(impulseAlongNormal, 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
 
 
         // Next calculate the angular impulse to apply to the rigidbodies
 
-        const angularImpulse1 = Vec2.cross(rigidBody1DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the first rigidbody
-        const angularImpulse2 = Vec2.cross(rigidBody2DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the second rigidbody
-
-        rigidbody1.angularVelocity += (angularImpulse1 / rigidbody1.inertiaTensor);
-        rigidbody2.angularVelocity -= (angularImpulse2 / rigidbody2.inertiaTensor); 
+        rigidbody1.angularVelocity += inverseInertiaTensor1 * Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal); // Apply the angular impulse to the first rigidbody
+        rigidbody2.angularVelocity -= inverseInertiaTensor2 * Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal); // Apply the angular impulse to the second rigidbody
 
         console.log(rigidBody1DistToContactPoint, rigidBody2DistToContactPoint)
-        console.log(angularImpulse1, angularImpulse2)
 
         return {rigidbody1, rigidbody2}; // Return the updated rigidbodies
         
@@ -1133,62 +1165,9 @@ export class PhysicsAPI extends ModuleAPI {
 }
 
 
-// export class PhysicsModule extends Module {
-//       //#region Private Fields
-//       #lastPhysicsUpdate = performance.now();
-//       #timeStepLimit = 50; //Unit: ms, Prevents spiral of death and a bug when alt tabbing causes dt to be very large and the physics to break
-//       //#endregion
-      
-//     constructor(engineAPI) {
-//         super(engineAPI);
-
-//         this.matterEngine = Engine.create({gravity: {x: 0, y: 1}});
-//         this.matterWorld = this.matterEngine.world;
-        
-//         this.debugMode = true;
-
-//         this.rigidBodies = [];
-//     }
-
-//     start() {
-        
-//     }
-
-//     update(dt) {
-//         const timeSinceLastUpdate = Math.min(performance.now() - this.#lastPhysicsUpdate, this.#timeStepLimit); // Prevents spiral of death and a bug when alt tabbing causes dt to be very large and the physics to break
-//         Engine.update(this.matterEngine, timeSinceLastUpdate);
-//         this.#lastPhysicsUpdate = performance.now();
-        
-
-//         for (const body of this.rigidBodies){
-//             body.Update(this.debugMode);
-//         }
-//     }
-
-
-
-//     // called from within the rigidbody component
-//     addRigidBody(rigidBodyComponent){
-//         this.rigidBodies.push(rigidBodyComponent);
-//         Matter.World.add(this.matterWorld, rigidBodyComponent.composite);
-//     }
-
-//     debug(enable=true){
-//         this.debugMode = enable;
-//     }
-
-//     enableDebug(){
-//         this.debug(true);
-//     }
-
-//     disableDebug(){
-//         this.debug(false);
-//     }
-
-// }
-
 
 export class PhysicsModule extends Module{
+    #timeStepLimit = 50; // Maximum time step to prevent spiral of death (ms) 
     constructor(engineAPI){
         super(engineAPI);
         this.physicsAPI = engineAPI.getAPI('physics');
@@ -1222,11 +1201,11 @@ export class PhysicsModule extends Module{
             const worldPos = camera.screenToWorld(e.clientX, e.clientY);
             rigidBody2.position = new Vec2(worldPos.x, worldPos.y);
             
-            rigidBody2.velocity = new Vec2(-20, 0);
+            rigidBody2.velocity = new Vec2(-100, 0);
         });
 
-        rigidBody1.velocity = new Vec2(20, 0);
-        rigidBody3.velocity = new Vec2(0, -20);
+        rigidBody1.velocity = new Vec2(100, 0);
+        rigidBody3.velocity = new Vec2(0, -100);
 
 
         const ground = new Rigidbody(this.engineAPI, new Vec2(0, 500), 0, Infinity, 1, []);
@@ -1236,6 +1215,8 @@ export class PhysicsModule extends Module{
     }
 
     update(dt){
+        dt = Math.min(dt, this.#timeStepLimit / 1000); // Limit the time step to prevent spiral of death
+
         for (const body of this.rigidBodies){
             body.update(dt);
         }

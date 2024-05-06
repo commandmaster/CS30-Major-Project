@@ -176,7 +176,7 @@ export class Engine{
         
         
 
-        const gameSpeed = 2;
+        const gameSpeed = 1;
         let dt = performance.now() - this.#lastUpdate;
         dt /= 1000;
         dt *= gameSpeed;
