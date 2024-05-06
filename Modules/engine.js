@@ -162,7 +162,7 @@ export class Engine{
         this.update(0);
     }
 
-    update(dt){
+    update(){
         const priorityMap = new Map();
         priorityMap.set('asset', 0);
         priorityMap.set('audio', 1);
@@ -176,7 +176,10 @@ export class Engine{
         
         
 
-        dt = performance.now() - this.#lastUpdate;
+        const gameSpeed = 2;
+        let dt = performance.now() - this.#lastUpdate;
+        dt /= 1000;
+        dt *= gameSpeed;
         this.#lastUpdate = performance.now();
 
         for (let module of sortedModules){
