@@ -1055,27 +1055,7 @@ class CollisionSolver{
 
         // First calculate the impulse to apply to the rigidbodies - https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/5collisionresponse/Physics%20-%20Collision%20Response.pdf
 
-        // linear impulse calculations
-        const coefficientOfRestitution = rigidbody1.bounce * rigidbody2.bounce; // Combine the bounciness of the two rigidbodies
-       
-
-        const relativeVelocity = Vec2.sub(rigidbody2.velocity, rigidbody1.velocity); // Calculate the relative velocity of the two rigidbodies
-        const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * (1 + coefficientOfRestitution) * (-1); // Calculate the relative velocity along the collision normal
-
-        const totalInverseMass = (1 / rigidbody1.mass) + (1 / rigidbody2.mass); // Calculate the total inverse mass of the two rigidbodies
-        const angularEffect = 0; // Calculate the angular effect of the two rigidbodies (NOT IMPLEMENTED YET)
-    
-
-        // calculate the final impulse
-        const impulse = relativeVelocityAlongNormal / (totalInverseMass + angularEffect); // Calculate the impulse to apply to the rigidbodies
-
-
-        rigidbody1.velocity.add(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
-        rigidbody2.velocity.sub(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
-
-
-        // Next calculate the angular impulse to apply to the rigidbodies
-
+        
         let rigidBody1DistToContactPoint = null;
         let rigidBody2DistToContactPoint = null;
         let collisionPoint = null;
@@ -1091,6 +1071,35 @@ class CollisionSolver{
             rigidBody1DistToContactPoint = Vec2.sub(collisionPoint, rigidbody1.position); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
             rigidBody2DistToContactPoint = Vec2.sub(collisionPoint, rigidbody2.position); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
         }
+
+
+
+        // linear impulse calculations
+        const coefficientOfRestitution = rigidbody1.bounce * rigidbody2.bounce; // Combine the bounciness of the two rigidbodies
+       
+
+        const relativeVelocity = Vec2.sub(rigidbody2.velocity, rigidbody1.velocity); // Calculate the relative velocity of the two rigidbodies
+        const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * (1 + coefficientOfRestitution) * (-1); // Calculate the relative velocity along the collision normal
+
+        const totalInverseMass = (1 / rigidbody1.mass) + (1 / rigidbody2.mass); // Calculate the total inverse mass of the two rigidbodies
+        const inverseInertiaTensor1 = 1 / rigidbody1.inertiaTensor; // Calculate the inverse inertia tensor of the first rigidbody
+        const inverseInertiaTensor2 = 1 / rigidbody2.inertiaTensor; // Calculate the inverse inertia tensor of the second rigidbody
+
+        const crossedR1 = Vec2.cross(rigidBody1DistToContactPoint, collisionNormal) * inverseInertiaTensor1; // Calculate the cross product of the vector from the center of mass of the first rigidbody to the point of collision and the collision normal
+        const crossedR2 = Vec2.cross(rigidBody2DistToContactPoint, collisionNormal) * inverseInertiaTensor2; // Calculate the cross product of the vector from the center of mass of the second rigidbody to the point of collision and the collision normal
+        console.log(crossedR1 )
+        const angularEffect = Vec2.dot(collisionNormal, (rigidBody1DistToContactPoint.clone().scale(crossedR1)).add(rigidBody2DistToContactPoint.clone().scale(crossedR2))); // Calculate the angular effect of the two rigidbodies (NOT IMPLEMENTED YET)
+        console.log(angularEffect)
+
+        // calculate the final impulse
+        const impulse = relativeVelocityAlongNormal / (totalInverseMass + angularEffect); // Calculate the impulse to apply to the rigidbodies
+
+
+        rigidbody1.velocity.add(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody1.mass)); // Apply the impulse to the first rigidbody
+        rigidbody2.velocity.sub(Vec2.scale(collisionNormal.clone().scale(impulse), 1 / rigidbody2.mass)); // Apply the impulse to the second rigidbody
+
+
+        // Next calculate the angular impulse to apply to the rigidbodies
 
         const angularImpulse1 = Vec2.cross(rigidBody1DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the first rigidbody
         const angularImpulse2 = Vec2.cross(rigidBody2DistToContactPoint, (Vec2.scale(collisionNormal, impulse))); // Calculate the angular impulse to apply to the second rigidbody
