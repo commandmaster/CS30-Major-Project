@@ -519,6 +519,9 @@ class CircleCollider{
         this.type = 'circle';
 
         this.refresh();
+        this.boundingBox = new BoundingBox(Vec2.sub(this.position, new Vec2(this.radius, this.radius)), this.radius * 2, this.radius * 2);
+
+  
     }
 
     refresh(){
@@ -530,6 +533,7 @@ class CircleCollider{
         const y = this.offset.x * Math.sin(angle) + this.offset.y * Math.cos(angle);
 
         this.position = new Vec2(x, y).add(position);
+
     }
 
     debugDraw(){
@@ -539,6 +543,16 @@ class CircleCollider{
             ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
             ctx.stroke();
             ctx.closePath();
+
+            // Draw the bounding box
+            const shouldDrawBoundingBox = false;
+            if (!shouldDrawBoundingBox) return;
+            ctx.beginPath();
+            ctx.strokeStyle = 'blue';
+            ctx.strokeRect(this.boundingBox.position.x, this.boundingBox.position.y, this.boundingBox.width, this.boundingBox.height);
+            ctx.stroke();
+            ctx.closePath();
+
         }
 
         const renderAPI = this.rigidBody.engineAPI.getAPI('render');
@@ -548,13 +562,14 @@ class CircleCollider{
 
     update(dt){
         this.refresh();
+        this.boundingBox.position = Vec2.sub(this.position, new Vec2(this.radius, this.radius)).scale(-1);
         this.debugDraw();
     }
 }
 
 class Rigidbody{
     #velocity = new Vec2(0, 0); // Linear velocity
-    #acceleration = new Vec2(0, 20); // Linear acceleration
+    #acceleration = new Vec2(0, 70); // Linear acceleration
     #angularVelocity = 0; // Angular velocity
     #angularAcceleration = 0; // Angular acceleration
     #angularDrag = 0.001; // Angular drag
@@ -563,8 +578,9 @@ class Rigidbody{
     #rotation = 0; // Rotation of the rigidbody
     #mass = 0; // Mass of the rigidbody
     #bounce = 0.5; // Coefficient of restitution (bounciness) of the rigidbody
+    #angularCollisionDamping = 0.1; // Angular collision damping
     #colliders = []; // Colliders attached to the rigidbody
-    #inertiaTensor = 50000; // Inertia tensor of the rigidbody
+    #inertiaTensor = 80000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
     #engineAPI; // EngineAPI used to access the engine
 
@@ -577,6 +593,9 @@ class Rigidbody{
         this.#mass = mass;
         this.#bounce = bounce; // Coefficient of restitution (bounciness) of the rigidbody, 0 = no bounce, 1 = perfect bounce,  1 < = gain energy
         this.#colliders = colliders; // Must be an array of collider class instances
+
+        this.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {};
+        this.onCollisionExitFunc = (rigidBody, collisionData, otherBody) => {};
 
         // Calculate the transform of the rigidbody (inertia tensor, etc...)
         this.#calculateTransform();
@@ -622,6 +641,14 @@ class Rigidbody{
     addCollider(collider){
         this.#colliders.push(collider);
         this.#calculateTransform();
+    }
+
+    onCollisionEnter(collisionData, otherBody){
+        this.onCollisionEnterFunc(this, collisionData, otherBody);
+    }
+
+    onCollisionExit(collisionData, otherBody){
+        this.onCollisionExitFunc(this, collisionData, otherBody);
     }
 
     update(dt){
@@ -753,6 +780,10 @@ class Rigidbody{
         return this.#centerOfMass;
     }
 
+    get angularCollisionDamping(){
+        return this.#angularCollisionDamping;
+    }
+
     get engineAPI(){
         return this.#engineAPI;
     }
@@ -821,8 +852,6 @@ class Intersection{
         const alpha = alphaNumerator / alphaDenominator;
         const beta = betaNumerator / betaDenominator;
 
-        console.log(alpha, beta)
-
         if (alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1){
             // Lines intersect
             const x = line1Start.x + alpha * (line1End.x - line1Start.x);
@@ -889,11 +918,31 @@ class Intersection{
 
 
 class SAT{
+    static circleToCircle(collider1, collider2){
+        // Check for collision between two circles
+        if (AABB.checkCollision(collider1.boundingBox, collider2.boundingBox) === false) return false; // Return false if there is no overlap
+
+        const distance = Vec2.dist(collider1.position, collider2.position); // Calculate the distance between the two circles
+        const radiusSum = collider1.radius + collider2.radius; // Calculate the sum of the radii of the two circles
+
+        if (distance > radiusSum){
+            return false; // Return false if there is no collision
+        }
+
+        const normal = Vec2.normalize(Vec2.sub(collider2.position, collider1.position)); // Get the normal of the collision
+        const overlap = radiusSum - distance; // Get the overlap distance
+
+
+
+        return new CollisionData(normal, overlap, collider1, collider2, [collider1.position, collider2.position]); // Return the collision data
+    }
+
     static circleToPoly(collider1, collider2){
         // Check for collision between a circle and a polygon
         const circle = (collider1.type === 'circle') ? collider1 : collider2; // Get the circle collider
         const poly = (collider1.type === 'convex') ? collider1 : collider2; // Get the polygon collider
         
+        if (AABB.checkCollision(circle.boundingBox, poly.boundingBox) === false) return false; // Return false if there is no overlap
 
         
         let minDist = Infinity;
@@ -1357,8 +1406,10 @@ class CollisionSolver{
         // linear impulse calculations
         const coefficientOfRestitution = Math.min(rigidbody1.bounce, rigidbody2.bounce); // Combine the bounciness of the two rigidbodies
        
+        const crossedAngVel1 = Vec2.scale(collisionNormal, rigidbody1.angularVelocity * Math.PI/180); // Calculate the cross product of the vector from the center of mass of the first rigidbody to the point of collision and the collision normal
+        const crossedAngVel2 = Vec2.scale(collisionNormal, rigidbody2.angularVelocity * Math.PI/180); // Calculate the cross product of the vector from the center of mass of the second rigidbody to the point of collision and the collision normal
 
-        const relativeVelocity = Vec2.sub(rigidbody1.velocity, rigidbody2.velocity); // Calculate the relative velocity of the two rigidbodies
+        const relativeVelocity = Vec2.sub(Vec2.add(rigidbody1.velocity, crossedAngVel1), Vec2.add(rigidbody2.velocity, crossedAngVel2)); // Calculate the relative velocity of the two rigidbodies
         const relativeVelocityAlongNormal = Vec2.dot(relativeVelocity, collisionNormal) * -(1 + coefficientOfRestitution); // Calculate the relative velocity along the collision normal
 
         const totalInverseMass = (1 / rigidbody1.mass) + (1 / rigidbody2.mass); // Calculate the total inverse mass of the two rigidbodies
@@ -1379,8 +1430,8 @@ class CollisionSolver{
 
 
         // Next calculate the angular impulse to apply to the rigidbodies
-        let a1TpoApply = inverseInertiaTensor1 * Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal);
-        let a2TpoApply = inverseInertiaTensor2 * Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal);
+        let a1TpoApply = inverseInertiaTensor1 * Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal) * (1 - rigidbody1.angularCollisionDamping);
+        let a2TpoApply = inverseInertiaTensor2 * Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal) * (1 - rigidbody1.angularCollisionDamping);
 
     
 
@@ -1420,6 +1471,7 @@ export class PhysicsModule extends Module{
         this.physicsAPI = engineAPI.getAPI('physics');
 
         this.rigidBodies = [];
+        this.currentCollisions = [];
     }
 
     preload(){
@@ -1434,10 +1486,12 @@ export class PhysicsModule extends Module{
 
 
         rigidBody1.addCollider(new RectangleCollider(rigidBody1, 0, 0, 35, 1, 100, 100));
+        rigidBody1.addCollider(new CircleCollider(rigidBody1, 50, 0, 1, 20));
         rigidBody2.addCollider(new RectangleCollider(rigidBody2, 0, 0, 0, 1, 100, 100));
+        rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 20));
         rigidBody3.addCollider(new TriangleCollider(rigidBody3, 0, 0, 0, 1, 100, 100));
         rigidBody3.addCollider(new RectangleCollider(rigidBody3, -150, 0, 0, 1, 100, 100));
-        rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 20));
+        
 
 
         this.rigidBodies.push(rigidBody1);
@@ -1491,6 +1545,7 @@ export class PhysicsModule extends Module{
                         if (collider1.type === 'circle' && collider2.type === 'convex'){
                             const collisionData = SAT.circleToPoly(collider1, collider2);
                             if (collisionData){
+                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
                                 CollisionSolver.resolveCollision(body1, body2, collisionData);
                             }
                         }
@@ -1498,6 +1553,7 @@ export class PhysicsModule extends Module{
                             const collisionData = SAT.circleToPoly(collider1, collider2);
 
                             if (collisionData){
+                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
                                 CollisionSolver.resolveCollision(body1, body2, collisionData);
                             }
                         }
@@ -1505,6 +1561,15 @@ export class PhysicsModule extends Module{
                             const collisionData = SAT.checkPolyToPoly(collider1, collider2);
 
                             if (collisionData){
+                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
+                                CollisionSolver.resolveCollision(body1, body2, collisionData);
+                            }
+                        }
+                        else if (collider1.type === 'circle' && collider2.type === 'circle'){
+                            const collisionData = SAT.circleToCircle(collider1, collider2);
+
+                            if (collisionData){
+                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
                                 CollisionSolver.resolveCollision(body1, body2, collisionData);
                             }
                         }
@@ -1515,5 +1580,7 @@ export class PhysicsModule extends Module{
                
             }
         }
+
+        this.currentCollisions = [];
     }
 }
