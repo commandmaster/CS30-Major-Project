@@ -748,6 +748,11 @@ class Rigidbody{
         return this.#inertiaTensor;
     }
 
+    get centerOfMass(){
+        this.#calculateTransform(); // Recalculate the transform before returning the center of mass
+        return this.#centerOfMass;
+    }
+
     get engineAPI(){
         return this.#engineAPI;
     }
@@ -860,6 +865,26 @@ class Intersection{
 
         return {dist: Vec2.dist(point, closestPoint), closestPoint};
     }
+
+    static pointInsidePolygon(point, polygon){
+        const marginForGoodMeasure = 0.1; // Margin for good measure to avoid floating point errors
+        const minXOfPolygon = polygon.boundingBox.position.x - marginForGoodMeasure; // Get the minimum x value of the polygon (use the bounding box to avoid having to loop through all the vertices)
+        let edgeIntersectionCount = 0; // Initialize the edge intersection count to 0
+        for (let i = 0; i < polygon.vertices.length; i++){
+            const vertex = polygon.vertices[i]; // Get the vertex of the polygon
+            const nextVertex = polygon.vertices[(i + 1) % polygon.vertices.length]; // Get the next vertex of the polygon
+
+            const rayStart = new Vec2(minXOfPolygon, point.y); // Create a ray starting at the point and going to the left
+            const rayEnd = point; // Create a ray ending at the point
+            
+            const intersection = Intersection.lineToLine(rayStart, rayEnd, vertex, nextVertex);
+            if (intersection !== false){
+                edgeIntersectionCount++;
+            }
+        }
+
+        return edgeIntersectionCount % 2 === 1;
+    }
 }
 
 
@@ -875,23 +900,43 @@ class SAT{
         let normal = null;
         let overlap = 0;
         let closestPoint = null;
+        let closestPointInfos = [];
         for (let i = 0; i < poly.vertices.length; i++){
             const vertex = poly.vertices[i]; // Get the vertex of the polygon
             const nextVertex = poly.vertices[(i + 1) % poly.vertices.length]; // Get the next vertex of the polygon
 
             const closestPointInfo = Intersection.pointSegmentDistance(circle.position, vertex, nextVertex, true); // Get the closest point on the segment to the circle
-
+            closestPointInfos.push(closestPointInfo);
             if (closestPointInfo.dist < minDist && closestPointInfo.dist < circle.radius ** 2){
+                let trueDist = Math.sqrt(closestPointInfo.dist);
                 normal = Vec2.normalize(Vec2.sub(circle.position, closestPointInfo.closestPoint)); // Get the normal of the collision
-                overlap = circle.radius - Math.sqrt(closestPointInfo.dist); // Get the overlap distance
-                
+                overlap = circle.radius - trueDist; // Get the overlap distance
+
                 minDist = closestPointInfo.dist;
                 closestPoint = closestPointInfo.closestPoint;
             }
         }
 
         if (normal === null){
-            return false;
+            if (Intersection.pointInsidePolygon(circle.position, poly)){
+                let minDist = Infinity;
+                let closestPointInfo = null;
+                for (const info of closestPointInfos){
+                    if (info.dist < minDist){
+                        minDist = info.dist;
+                        closestPointInfo = info;
+                    }
+                }
+
+                normal = Vec2.normalize(Vec2.sub(circle.position, closestPointInfo.closestPoint)); // Get the normal of the collision
+                overlap = Math.sqrt(closestPointInfo.dist); // Get the overlap distance
+                closestPoint = closestPointInfo.closestPoint;
+            }
+
+            else{
+                return false;
+            }
+            
         } 
 
         const direction = Vec2.sub(collider2. position, collider1.position);
@@ -1291,15 +1336,15 @@ class CollisionSolver{
 
         if (contactPoints.length === 2){
             collisionPoint = Vec2.midpoint(contactPoints[0], contactPoints[1]);
-            rigidBody1DistToContactPoint = Vec2.sub(rigidbody1.position, collisionPoint); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
-            rigidBody2DistToContactPoint = Vec2.sub(rigidbody2.position, collisionPoint); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+            rigidBody1DistToContactPoint = Vec2.sub(rigidbody1.centerOfMass, collisionPoint); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
+            rigidBody2DistToContactPoint = Vec2.sub(rigidbody2.centerOfMass, collisionPoint); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
 
         }
 
         else {
             collisionPoint = contactPoints[0];
-            rigidBody1DistToContactPoint = Vec2.sub(collisionPoint, rigidbody1.position); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
-            rigidBody2DistToContactPoint = Vec2.sub(collisionPoint, rigidbody2.position); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+            rigidBody1DistToContactPoint = Vec2.sub(collisionPoint, rigidbody1.centerOfMass); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
+            rigidBody2DistToContactPoint = Vec2.sub(collisionPoint, rigidbody2.centerOfMass); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
 
         }
 
