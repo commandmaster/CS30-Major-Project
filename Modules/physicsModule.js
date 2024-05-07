@@ -511,12 +511,44 @@ class TriangleCollider extends ConvexCollider{
 }
 
 class CircleCollider{
-    constructor(rigidBody, x, y, radius){
+    constructor(rigidBody, offsetX, offsetY, mass, radius){
         this.rigidBody = rigidBody;
-        this.x = x;
-        this.y = y;
+        this.offset = new Vec2(offsetX, offsetY);
+        this.mass = mass;
         this.radius = radius;
         this.type = 'circle';
+
+        this.refresh();
+    }
+
+    refresh(){
+        // Transform the collider based on the rigidbody position and rotation
+        const angle = this.rigidBody.rotation;
+        const position = this.rigidBody.position;
+
+        const x = this.offset.x * Math.cos(angle) - this.offset.y * Math.sin(angle);
+        const y = this.offset.x * Math.sin(angle) + this.offset.y * Math.cos(angle);
+
+        this.position = new Vec2(x, y).add(position);
+    }
+
+    debugDraw(){
+        const renderFunc = (canvas, ctx) => {
+            //Draw the collider for debugging purposes
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        const renderAPI = this.rigidBody.engineAPI.getAPI('render');
+        const task = new renderAPI.constructor.RenderTask(renderFunc);
+        renderAPI.addTask(task);
+    }
+
+    update(dt){
+        this.refresh();
+        this.debugDraw();
     }
 }
 
@@ -816,7 +848,6 @@ class Intersection{
             closestPoint = segmentEnd;
         }
         else {
-            console.log(normalizedProjection)
             closestPoint = Vec2.add(segmentEnd, Vec2.scale(segment, 1 - normalizedProjection));
         }
         // Calculate the distance between the point and the closest point on the segment
@@ -833,8 +864,38 @@ class Intersection{
 
 
 class SAT{
+    static circleToPoly(collider1, collider2){
+        // Check for collision between a circle and a polygon
+        const circle = (collider1.type === 'circle') ? collider1 : collider2; // Get the circle collider
+        const poly = (collider1.type === 'convex') ? collider1 : collider2; // Get the polygon collider
+        
+        let minDist = Infinity; // Initialize the minimum distance to infinity
+        let closestPoint = null; // Initialize the closest point to null
+
+        for (let i = 0; i < poly.vertices.length; i++){
+            const vertex = poly.vertices[i];
+            const nextVertex = poly.vertices[(i + 1) % poly.vertices.length];
+
+            const colisionInfo = Intersection.pointSegmentDistance(circle.position, vertex, nextVertex, true);
+            const sqDist = colisionInfo.dist;
+            const cp = colisionInfo.closestPoint;
+
+            if (sqDist < minDist){
+                minDist = sqDist;
+                closestPoint = cp;
+            }
+        }
+
+        const dist = Math.sqrt(minDist);
+        const normal = Vec2.sub(circle.position, closestPoint).normalize();
+
+        if (dist < circle.radius){
+            return new CollisionData(normal, circle.radius - dist, collider1, collider2, [closestPoint]);
+        }
+    }
+
     // Separating Axis Theorem - Used for collision detection between convex shapes - Theory learned at https://dyn4j.org/2010/01/sat/
-    static checkCollision(collider1, collider2){
+    static checkPolyToPoly(collider1, collider2){
         // Ignore colliders not in bounds 
         if (AABB.checkCollision(collider1.boundingBox, collider2.boundingBox) === false) return false; // Return false if there is no overlap
 
@@ -962,22 +1023,6 @@ class SAT{
         }
 
         const mtv = Vec2.scale(unitMtvDirection, mtvOverlap); // Scale the unit vector by the overlap to get the MTV (MAY BE REDUNDANT)
-
-        // // Draw the MTV for debugging purposes
-        // const renderFunc = (canvas, ctx) => {
-        //     //draw the MTV for debugging purposes
-        //     ctx.beginPath();
-        //     ctx.strokeStyle = 'green';
-        //     ctx.strokeWidth = 1;
-        //     ctx.moveTo(collider1.position.x, collider1.position.y);
-        //     ctx.lineTo(collider1.position.x + unitMtvDirection.x * 100, collider1.position.y + unitMtvDirection.y * 100);
-        //     ctx.stroke();
-        //     ctx.closePath();
-        // }
-
-        // const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
-        // const task = new renderAPI.constructor.RenderTask(renderFunc);
-        // renderAPI.addTask(task);
 
         const collisionPoints = SAT.collisionPoints(collider1, collider2); // Get the collision points between the two colliders
         const collisionData = new CollisionData(unitMtvDirection, mtvOverlap, collider1, collider1, collisionPoints); // Create the collision data object)
@@ -1275,6 +1320,7 @@ export class PhysicsModule extends Module{
         rigidBody2.addCollider(new RectangleCollider(rigidBody2, 0, 0, 0, 1, 100, 100));
         rigidBody3.addCollider(new TriangleCollider(rigidBody3, 0, 0, 0, 1, 100, 100));
         rigidBody3.addCollider(new RectangleCollider(rigidBody3, -150, 0, 0, 1, 100, 100));
+        rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 20));
 
 
         this.rigidBodies.push(rigidBody1);
@@ -1314,11 +1360,28 @@ export class PhysicsModule extends Module{
 
                 for (const collider1 of body1.colliders){
                     for (const collider2 of body2.colliders){
-                        const collisionData = SAT.checkCollision(collider1, collider2);
-
-                        if (collisionData){
-                            CollisionSolver.resolveCollision(body1, body2, collisionData);
+                        if (collider1.type === 'circle' && collider2.type === 'convex'){
+                            const collisionData = SAT.circleToPoly(collider1, collider2);
+                            if (collisionData){
+                                CollisionSolver.resolveCollision(body1, body2, collisionData);
+                            }
                         }
+                        else if (collider1.type === 'convex' && collider2.type === 'circle'){
+                            const collisionData = SAT.circleToPoly(collider1, collider2);
+
+                            if (collisionData){
+                                CollisionSolver.resolveCollision(body1, body2, collisionData);
+                            }
+                        }
+                        else if (collider1.type === 'convex' && collider2.type === 'convex'){
+                            const collisionData = SAT.checkPolyToPoly(collider1, collider2);
+
+                            if (collisionData){
+                                CollisionSolver.resolveCollision(body1, body2, collisionData);
+                            }
+                        }
+
+                        
                     }
                 }
                
