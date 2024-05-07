@@ -125,6 +125,11 @@ class Vec2{
         return new Vec2(v.x / scalar, v.y / scalar);
     }
 
+    static mag(v){
+        // Calculate the magnitude of a vector
+        return Math.sqrt((v.x ** 2) + (v.y ** 2));
+    }
+
     #x;
     #y;
     #mag;
@@ -520,14 +525,18 @@ class Rigidbody{
     #acceleration = new Vec2(0, 20); // Linear acceleration
     #angularVelocity = 0; // Angular velocity
     #angularAcceleration = 0; // Angular acceleration
+    #angularDrag = 0.001; // Angular drag
+    #linearDrag = 0.001; // Linear drag
     #position = new Vec2(0, 0); // Position of the rigidbody
     #rotation = 0; // Rotation of the rigidbody
     #mass = 0; // Mass of the rigidbody
     #bounce = 0.5; // Coefficient of restitution (bounciness) of the rigidbody
     #colliders = []; // Colliders attached to the rigidbody
-    #inertiaTensor = 100000; // Inertia tensor of the rigidbody
+    #inertiaTensor = 50000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
     #engineAPI; // EngineAPI used to access the engine
+
+    #actingForces = []; // Forces acting on the rigidbody
     constructor(engineAPI, position, rotation, mass, bounce, colliders){
         // Initialize the rigidbody with it's basic properties
         this.#engineAPI = engineAPI; // EngineAPI used to access the engine
@@ -565,6 +574,19 @@ class Rigidbody{
         return this.#centerOfMass; // Return the center of mass
     }
 
+    #applyDrag(){
+        // Apply drag to the rigidbody
+        this.#velocity.scale(1 - this.#linearDrag); // Apply linear drag to the velocity
+        this.#angularVelocity *= 1 - this.#angularDrag; // Apply angular drag to the angular velocity
+    }
+
+    applyForce(force, scalar=1, shouldNormalizeForceVector=false){
+        // Apply a force to the rigidbody
+        if (shouldNormalizeForceVector) force = Vec2.normalize(force); // Normalize the force vector if it should be normalized
+        this.#actingForces.push(Vec2.scale(force, scalar)); // Add the force to the acting forces array
+    }
+
+
     addCollider(collider){
         this.#colliders.push(collider);
         this.#calculateTransform();
@@ -574,10 +596,14 @@ class Rigidbody{
         // use implicit euler integration to update the position and velocity of the rigidbody
         //https://gafferongames.com/post/integration_basics/
 
+        // Sum all the forces acting on the rigidbody
+        const actingForces = this.#actingForces.reduce((acc, force) => Vec2.add(acc, force), Vec2.zero);
+        const accelerationFromForces = Vec2.scale(actingForces, 1 / this.#mass);
 
-        if (!(this.#mass === 0 || this.#mass === Infinity || this.isStatic === true)) {
-                // Update the linear velocity
-            this.#velocity.add(this.#acceleration.clone().scale(dt));
+
+        if (!(this.#mass === 0 || this.#mass === Infinity || this.isStatic === true)) { 
+            // Update the linear velocity
+            this.#velocity.add(this.#acceleration.clone().add(accelerationFromForces).scale(dt));
             
             // Update the angular velocity
             this.#angularVelocity += this.#angularAcceleration * (dt); 
@@ -589,6 +615,7 @@ class Rigidbody{
             this.#rotation += this.#angularVelocity * (dt); 
         }
        
+        this.#applyDrag(); // Apply drag to the rigidbody
         this.#calculateTransform();
         this.#colliders.forEach(collider => collider.update((dt)));
     }
@@ -773,11 +800,13 @@ class Intersection{
 
     static pointSegmentDistance(point, segmentStart, segmentEnd, isSquaredDistance = false){
         const segment = Vec2.sub(segmentEnd, segmentStart);
+
+        
         const pointToStart = Vec2.sub(point, segmentStart);
-        const segmentLength = segment.mag;
+        const segmentLength = Vec2.mag(segment);
         const projection = Vec2.dot(pointToStart, segment)
 
-        const normalizedProjection = projection / segmentLength ** 2;
+        const normalizedProjection = projection / (segmentLength ** 2);
 
         let closestPoint = null;
         if (normalizedProjection <= 0){
@@ -787,15 +816,18 @@ class Intersection{
             closestPoint = segmentEnd;
         }
         else {
-            closestPoint = Vec2.add(segmentStart, Vec2.scale(segment, normalizedProjection));
+            console.log(normalizedProjection)
+            closestPoint = Vec2.add(segmentEnd, Vec2.scale(segment, 1 - normalizedProjection));
         }
         // Calculate the distance between the point and the closest point on the segment
 
+        // Draw line from point to closest point
+
         if (isSquaredDistance){
-            return Vec2.sqDist(point, closestPoint);
+            return {dist: Vec2.sqDist(point, closestPoint), closestPoint};
         }
 
-        return Vec2.dist(point, closestPoint);
+        return {dist: Vec2.dist(point, closestPoint), closestPoint};
     }
 }
 
@@ -931,6 +963,22 @@ class SAT{
 
         const mtv = Vec2.scale(unitMtvDirection, mtvOverlap); // Scale the unit vector by the overlap to get the MTV (MAY BE REDUNDANT)
 
+        // // Draw the MTV for debugging purposes
+        // const renderFunc = (canvas, ctx) => {
+        //     //draw the MTV for debugging purposes
+        //     ctx.beginPath();
+        //     ctx.strokeStyle = 'green';
+        //     ctx.strokeWidth = 1;
+        //     ctx.moveTo(collider1.position.x, collider1.position.y);
+        //     ctx.lineTo(collider1.position.x + unitMtvDirection.x * 100, collider1.position.y + unitMtvDirection.y * 100);
+        //     ctx.stroke();
+        //     ctx.closePath();
+        // }
+
+        // const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
+        // const task = new renderAPI.constructor.RenderTask(renderFunc);
+        // renderAPI.addTask(task);
+
         const collisionPoints = SAT.collisionPoints(collider1, collider2); // Get the collision points between the two colliders
         const collisionData = new CollisionData(unitMtvDirection, mtvOverlap, collider1, collider1, collisionPoints); // Create the collision data object)
 
@@ -985,59 +1033,87 @@ class SAT{
         
 
         for(let i = 0; i < collider1.vertices.length; i++){
-            const point = collider1.vertices[i]; // Get the first vertex
+            const vertex = collider1.vertices[i]; // Get the first vertex
 
             for(let j = 0; j < collider2.vertices.length; j++){
                 const edgeStart = collider2.vertices[j]; // Get the start of the edge
                 const edgeEnd = collider2.vertices[(j + 1) % collider2.vertices.length]; // Get the end of the edge (wraps around to the first vertex if the last vertex is reached)
 
-                const closestPointSqDist = Intersection.pointSegmentDistance(point, edgeStart, edgeEnd, true); // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+                const pSegDistInfo = Intersection.pointSegmentDistance(vertex, edgeStart, edgeEnd, true); // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+                const closestPointSqDist = pSegDistInfo.dist; // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+
 
                 // Check if the distances are close enough to be considered the same
                 // Check if the first contact point is not the same as the second contact point (or very close <- floating point precision)
 
-                const tolerance = 0.0001; // Tolerance for floating point precision
+                const tolerance = 0.001; // Tolerance for floating point precision
                 const areDistancesClose = Math.abs(closestPointSqDist - minSquaredDistance) < tolerance; // Check if the distances are close enough to be considered the same
-                if (areDistancesClose && !Vec2.isEqual(contactPoints[0], point, tolerance)){
-                    contactCount++; // Update the contact count
-                    contactPoints.push(point); // Add the point to the contact points
+                if (areDistancesClose){
+                    if (!Vec2.isEqual(contactPoints[0], pSegDistInfo.closestPoint, tolerance)){
+                        contactCount++; // Update the contact count
+                        contactPoints.push(pSegDistInfo.closestPoint); // Add the point to the contact points
+                    }
                 }
 
                 else if (closestPointSqDist < minSquaredDistance){
                     minSquaredDistance = closestPointSqDist; // Update the minimum squared distance if the current squared distance is less than the minimum squared distance
                     contactCount = 1; // Update the contact count to 1
-                    contactPoints = [point]; // Update the contact points to the point
+                    contactPoints = [pSegDistInfo.closestPoint]; // Update the contact points to the point
                 }
+
             }
         }
 
         // Reverse and test the other way
         for(let i = 0; i < collider2.vertices.length; i++){
-            const point = collider2.vertices[i]; // Get the first vertex
+            const vertex = collider2.vertices[i]; // Get the first vertex
 
             for(let j = 0; j < collider1.vertices.length; j++){
                 const edgeStart = collider1.vertices[j]; // Get the start of the edge
                 const edgeEnd = collider1.vertices[(j + 1) % collider1.vertices.length]; // Get the end of the edge (wraps around to the first vertex if the last vertex is reached)
 
-                const closestPointSqDist = Intersection.pointSegmentDistance(point, edgeStart, edgeEnd, true); // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+                const pSegDistInfo = Intersection.pointSegmentDistance(vertex, edgeStart, edgeEnd, true); // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+                const closestPointSqDist = pSegDistInfo.dist; // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+
 
                 // Check if the distances are close enough to be considered the same
                 // Check if the first contact point is not the same as the second contact point (or very close <- floating point precision)
 
-                const tolerance = 0.0001; // Tolerance for floating point precision
+                const tolerance = 0.001; // Tolerance for floating point precision
                 const areDistancesClose = Math.abs(closestPointSqDist - minSquaredDistance) < tolerance; // Check if the distances are close enough to be considered the same
-                if (areDistancesClose && !Vec2.isEqual(contactPoints[0], point, tolerance)){
-                    contactCount++; // Update the contact count
-                    contactPoints.push(point); // Add the point to the contact points
+                if (areDistancesClose){
+                    if (!Vec2.isEqual(contactPoints[0], pSegDistInfo.closestPoint, tolerance)){
+                        contactCount++; // Update the contact count
+                        contactPoints.push(pSegDistInfo.closestPoint); // Add the point to the contact points
+                    }
+                    
                 }
 
                 else if (closestPointSqDist < minSquaredDistance){
                     minSquaredDistance = closestPointSqDist; // Update the minimum squared distance if the current squared distance is less than the minimum squared distance
                     contactCount = 1; // Update the contact count to 1
-                    contactPoints = [point]; // Update the contact points to the point
+                    contactPoints = [pSegDistInfo.closestPoint]; // Update the contact points to the point
                 }
             }
         }
+
+        for (const cp of contactPoints){
+            const renderFunc = (canvas, ctx) => {
+                //draw the axis for debugging purposes
+                ctx.beginPath();
+                ctx.strokeStyle = 'green';
+                ctx.strokeWidth = 1;
+                ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.closePath();
+                
+            }
+
+            const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
+            const task = new renderAPI.constructor.RenderTask(renderFunc);
+            renderAPI.addTask(task);
+        }
+    
 
         return contactPoints; // Return the contact points
     }
@@ -1061,7 +1137,7 @@ class CollisionSolver{
         // Resolve the collision between two rigidbodies
         const collisionNormal = collisionData.axis; // Get the collision normal (MTV axis)
         const seperationDistance = collisionData.overlap; // Get the seperation distance (overlap distance)
-        const seperationAxis = collisionNormal.clone(); // Clone the collision normal to get the seperation axis
+        const seperationAxis = collisionNormal.clone().normalized; // Clone the collision normal to get the seperation axis
         
         const contactPoints = collisionData.collisionPoints; // Get the contact points between the two colliders
         
@@ -1098,15 +1174,20 @@ class CollisionSolver{
 
         if (contactPoints.length === 2){
             collisionPoint = Vec2.midpoint(contactPoints[0], contactPoints[1]);
-            rigidBody1DistToContactPoint = Vec2.sub(collisionPoint, rigidbody1.position); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
-            rigidBody2DistToContactPoint = Vec2.sub(collisionPoint, rigidbody2.position); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+            rigidBody1DistToContactPoint = Vec2.sub(rigidbody1.position, collisionPoint); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
+            rigidBody2DistToContactPoint = Vec2.sub(rigidbody2.position, collisionPoint); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+
         }
 
         else {
             collisionPoint = contactPoints[0];
             rigidBody1DistToContactPoint = Vec2.sub(collisionPoint, rigidbody1.position); // Calculate the vector from the center of mass of the first rigidbody to the point of collision
             rigidBody2DistToContactPoint = Vec2.sub(collisionPoint, rigidbody2.position); // Calculate the vector from the center of mass of the second rigidbody to the point of collision
+
         }
+
+       
+
 
         
        
@@ -1136,11 +1217,15 @@ class CollisionSolver{
 
 
         // Next calculate the angular impulse to apply to the rigidbodies
+        let a1TpoApply = inverseInertiaTensor1 * Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal);
+        let a2TpoApply = inverseInertiaTensor2 * Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal);
 
-        rigidbody1.angularVelocity += inverseInertiaTensor1 * Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal); // Apply the angular impulse to the first rigidbody
-        rigidbody2.angularVelocity -= inverseInertiaTensor2 * Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal); // Apply the angular impulse to the second rigidbody
+    
 
-        console.log(rigidBody1DistToContactPoint, rigidBody2DistToContactPoint)
+        rigidbody1.angularVelocity += a1TpoApply // Apply the angular impulse to the first rigidbody
+        rigidbody2.angularVelocity -= a2TpoApply  // Apply the angular impulse to the second rigidbody
+
+        console.log(Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal), Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal)) // Debugging
 
         return {rigidbody1, rigidbody2}; // Return the updated rigidbodies
         
@@ -1232,7 +1317,6 @@ export class PhysicsModule extends Module{
                         const collisionData = SAT.checkCollision(collider1, collider2);
 
                         if (collisionData){
-                            console.log(collisionData);
                             CollisionSolver.resolveCollision(body1, body2, collisionData);
                         }
                     }

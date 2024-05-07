@@ -115,6 +115,11 @@ export class RenderAPI extends ModuleAPI {
         module.renderTasks.push(renderTask);
     }
 
+    addPermenantTask(renderTask){
+        const module = super.getModule('render');
+        module.permenantRenderTasks.push(renderTask);
+    }
+
     getCamera(){
         const module = super.getModule('render');
         return module.camera;
@@ -128,6 +133,7 @@ export class RenderModule extends Module {
         this.canvas = engineAPI.canvas;
         this.renderAPI = engineAPI.getAPI('render');
         this.renderTasks = [];
+        this.permenantRenderTasks = [];
     }
 
     preload(){
@@ -162,6 +168,11 @@ export class RenderModule extends Module {
         this.ctx.fillStyle = "black";
 
         for(const renderTask of this.renderTasks){
+            if (typeof renderTask.render !== 'function' || typeof renderTask.render === 'undefined' || renderTask.render === null) throw new Error("Render task is not valid.");
+            renderTask.render(this.canvas, this.ctx);
+        }
+
+        for(const renderTask of this.permenantRenderTasks){
             if (typeof renderTask.render !== 'function' || typeof renderTask.render === 'undefined' || renderTask.render === null) throw new Error("Render task is not valid.");
             renderTask.render(this.canvas, this.ctx);
         }
