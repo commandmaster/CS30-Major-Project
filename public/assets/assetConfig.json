@@ -1,7 +1,7 @@
 [
     {
         "type": "image",
-        "path": "assets/spriteSheets/playerAnmis.png",
+        "path": "assets/spriteSheets/playerAnims.png",
         "name": "playerAnims"
     }
 ]
