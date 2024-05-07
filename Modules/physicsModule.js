@@ -869,8 +869,6 @@ class SAT{
         const circle = (collider1.type === 'circle') ? collider1 : collider2; // Get the circle collider
         const poly = (collider1.type === 'convex') ? collider1 : collider2; // Get the polygon collider
         
-        // check if the circle is fully inside the polygon
-
 
         
         let minDist = Infinity;
@@ -886,15 +884,15 @@ class SAT{
             if (closestPointInfo.dist < minDist && closestPointInfo.dist < circle.radius ** 2){
                 normal = Vec2.normalize(Vec2.sub(circle.position, closestPointInfo.closestPoint)); // Get the normal of the collision
                 overlap = circle.radius - Math.sqrt(closestPointInfo.dist); // Get the overlap distance
-
-                
                 
                 minDist = closestPointInfo.dist;
                 closestPoint = closestPointInfo.closestPoint;
             }
         }
 
-        if (normal === null) return false;
+        if (normal === null){
+            return false;
+        } 
 
         const direction = Vec2.sub(collider2. position, collider1.position);
         if (Vec2.dot(normal, direction) < 0){
