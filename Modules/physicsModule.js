@@ -869,33 +869,45 @@ class SAT{
         const circle = (collider1.type === 'circle') ? collider1 : collider2; // Get the circle collider
         const poly = (collider1.type === 'convex') ? collider1 : collider2; // Get the polygon collider
         
-        let minDist = Infinity; // Initialize the minimum distance to infinity
-        let closestPoint = null; // Initialize the closest point to null
+        // check if the circle is fully inside the polygon
 
+
+        
+        let minDist = Infinity;
+        let normal = null;
+        let overlap = 0;
+        let closestPoint = null;
         for (let i = 0; i < poly.vertices.length; i++){
-            const vertex = poly.vertices[i];
-            const nextVertex = poly.vertices[(i + 1) % poly.vertices.length];
+            const vertex = poly.vertices[i]; // Get the vertex of the polygon
+            const nextVertex = poly.vertices[(i + 1) % poly.vertices.length]; // Get the next vertex of the polygon
 
-            const colisionInfo = Intersection.pointSegmentDistance(circle.position, vertex, nextVertex, true);
-            const sqDist = colisionInfo.dist;
-            const cp = colisionInfo.closestPoint;
+            const closestPointInfo = Intersection.pointSegmentDistance(circle.position, vertex, nextVertex, true); // Get the closest point on the segment to the circle
 
-            if (sqDist < minDist){
-                minDist = sqDist;
-                closestPoint = cp;
+            if (closestPointInfo.dist < minDist && closestPointInfo.dist < circle.radius ** 2){
+                normal = Vec2.normalize(Vec2.sub(circle.position, closestPointInfo.closestPoint)); // Get the normal of the collision
+                overlap = circle.radius - Math.sqrt(closestPointInfo.dist); // Get the overlap distance
+
+                
+                
+                minDist = closestPointInfo.dist;
+                closestPoint = closestPointInfo.closestPoint;
             }
         }
 
-        const dist = Math.sqrt(minDist);
-        const normal = Vec2.sub(circle.position, closestPoint).normalize();
+        if (normal === null) return false;
 
-        if (dist < circle.radius){
-            return new CollisionData(normal, circle.radius - dist, collider1, collider2, [closestPoint]);
+        const direction = Vec2.sub(collider2. position, collider1.position);
+        if (Vec2.dot(normal, direction) < 0){
+            normal.scale(-1);
         }
+
+        return new CollisionData(normal, overlap, collider1, collider2, [closestPoint]); // Return the collision data
     }
 
+
+
     // Separating Axis Theorem - Used for collision detection between convex shapes - Theory learned at https://dyn4j.org/2010/01/sat/
-    static checkPolyToPoly(collider1, collider2){
+    static checkPolyToPoly(collider1, collider2, debug=false){
         // Ignore colliders not in bounds 
         if (AABB.checkCollision(collider1.boundingBox, collider2.boundingBox) === false) return false; // Return false if there is no overlap
 
@@ -903,48 +915,50 @@ class SAT{
         const axes1 = SAT.getAxes(collider1); // Get the axes of the first collider to test against
         const axes2 = SAT.getAxes(collider2); // Get the axes of the second collider to test against
 
-
-
-        // debug draw the axes
-        for (const axis of axes1){
-            const renderFunc = (canvas, ctx) => {
-                //draw the axis for debugging purposes
-                ctx.beginPath();
-                ctx.strokeStyle = 'red';
-                ctx.strokeWidth = 1;
-                ctx.moveTo(collider1.position.x - axis.x * 500, collider1.position.y - axis.y * 500);
-                ctx.lineTo(collider1.position.x + axis.x * 500, collider1.position.y + axis.y * 500);
-                ctx.stroke();
-                ctx.closePath();
+        if (debug){
+             // debug draw the axes
+            for (const axis of axes1){
+                const renderFunc = (canvas, ctx) => {
+                    //draw the axis for debugging purposes
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'red';
+                    ctx.strokeWidth = 1;
+                    ctx.moveTo(collider1.position.x - axis.x * 500, collider1.position.y - axis.y * 500);
+                    ctx.lineTo(collider1.position.x + axis.x * 500, collider1.position.y + axis.y * 500);
+                    ctx.stroke();
+                    ctx.closePath();
+                    
+                }
                 
-            }
-            
 
 
-            const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
-            const task = new renderAPI.constructor.RenderTask(renderFunc);
-            renderAPI.addTask(task);
-        }
-
-        for (const axis of axes2){
-            const renderFunc = (canvas, ctx) => {
-                //draw the axis for debugging purposes
-                ctx.beginPath();
-                ctx.strokeStyle = 'red';
-                ctx.strokeWidth = 1;
-                ctx.moveTo(collider2.position.x - axis.x * 500, collider2.position.y - axis.y * 500);
-                ctx.lineTo(collider2.position.x + axis.x * 500, collider2.position.y + axis.y * 500);
-                ctx.stroke();
-                ctx.closePath();
-                
+                const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
+                const task = new renderAPI.constructor.RenderTask(renderFunc);
+                renderAPI.addTask(task);
             }
 
+            for (const axis of axes2){
+                const renderFunc = (canvas, ctx) => {
+                    //draw the axis for debugging purposes
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'red';
+                    ctx.strokeWidth = 1;
+                    ctx.moveTo(collider2.position.x - axis.x * 500, collider2.position.y - axis.y * 500);
+                    ctx.lineTo(collider2.position.x + axis.x * 500, collider2.position.y + axis.y * 500);
+                    ctx.stroke();
+                    ctx.closePath();
+                    
+                }
 
-            const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
-            const task = new renderAPI.constructor.RenderTask(renderFunc);
-            renderAPI.addTask(task);
+
+                const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
+                const task = new renderAPI.constructor.RenderTask(renderFunc);
+                renderAPI.addTask(task);
+            }
+
         }
 
+       
 
 
         // Keep track of the axes tested to see check that we don't test any parallel axes
@@ -959,7 +973,6 @@ class SAT{
         let mtvOverlap = Infinity; // Initialize the overlap to infinity
 
         for (const axis of axes1){
-            axis.normalize(); // Normalize the axis
             for (const testedAxis of testedAxes){
                 if (SAT.checkParallelAxis(axis, testedAxis)){
                     continue; // Skip the axis if it is parallel to a previously tested axis
@@ -986,7 +999,6 @@ class SAT{
         }
 
         for (const axis of axes2){
-            axis.normalize(); // Normalize the axis
 
             for (const testedAxis of testedAxes){
                 if (SAT.checkParallelAxis(axis, testedAxis)){
@@ -1024,7 +1036,7 @@ class SAT{
 
         const mtv = Vec2.scale(unitMtvDirection, mtvOverlap); // Scale the unit vector by the overlap to get the MTV (MAY BE REDUNDANT)
 
-        const collisionPoints = SAT.collisionPoints(collider1, collider2); // Get the collision points between the two colliders
+        const collisionPoints = SAT.polyToPolyCollisionPoints(collider1, collider2); // Get the collision points between the two colliders
         const collisionData = new CollisionData(unitMtvDirection, mtvOverlap, collider1, collider1, collisionPoints); // Create the collision data object)
 
         return collisionData // Return the collision data
@@ -1038,15 +1050,31 @@ class SAT{
 
     static projectAxis(axis, collider){
         // Project the collider onto the axis and return the min and max values
+
+        
         let min = Infinity; // Initialize the min value to infinity
         let max = -Infinity; // Initialize the max value to -infinity
 
-        for (const vertex of collider.vertices){
-            const projecedPoint = SAT.projectVertex(vertex, axis); // Project the vertex onto the axis
 
-            min = Math.min(min, projecedPoint); // Update the min value if the dot product is less than the current min
-            max = Math.max(max, projecedPoint); // Update the max value if the dot product is greater than the current max
-            
+        if (collider.type === 'circle'){
+            const normalizedAxis = Vec2.normalize(axis); // Normalize the axis
+            const point1 = Vec2.add(collider.position, Vec2.scale(normalizedAxis, collider.radius)); // Project the circle onto the axis
+            const point2 = Vec2.sub(collider.position, Vec2.scale(normalizedAxis, collider.radius)); // Project the circle onto the axis
+            const projecedPoint1 = point1.dot(axis); // Project the first point onto the axis
+            const projecedPoint2 = point2.dot(axis); // Project the second point onto the axis
+
+            min = Math.min(min, projecedPoint1, projecedPoint2); // Update the min value if the dot product is less than the current min
+            max = Math.max(max, projecedPoint1, projecedPoint2); // Update the max value if the dot product is greater than the current max
+        }
+
+        else if (collider.type === 'convex'){
+            for (const vertex of collider.vertices){
+                const projecedPoint = SAT.projectVertex(vertex, axis); // Project the vertex onto the axis
+
+                min = Math.min(min, projecedPoint); // Update the min value if the dot product is less than the current min
+                max = Math.max(max, projecedPoint); // Update the max value if the dot product is greater than the current max
+                
+            }
         }
         
         return {min, max}; // Return the min and max values
@@ -1069,7 +1097,7 @@ class SAT{
         return axes; // Return the axes array
     }
 
-    static collisionPoints(collider1, collider2){
+    static polyToPolyCollisionPoints(collider1, collider2){
         // Check the collision points between two colliders - https://www.youtube.com/watch?v=5gDC1GU3Ivg
 
         let contactPoints = []; // Array to store the contact points
@@ -1159,6 +1187,52 @@ class SAT{
             renderAPI.addTask(task);
         }
     
+
+        return contactPoints; // Return the contact points
+    }
+
+    static polyCircleCollisionPoints(collider1, collider2){
+        // Check the collision points between a polygon and a circle
+        const poly = (collider1.type === 'convex') ? collider1 : collider2; // Get the polygon collider
+        const circle = (collider1.type === 'circle') ? collider1 : collider2; // Get the circle collider
+
+        let contactPoints = []; // Array to store the contact points
+        let contactCount = 0; // Initialize the contact count to 0
+        let minSquaredDistance = Infinity; // Initialize the minimum squared distance to infinity
+
+        for(let i = 0; i < poly.vertices.length; i++){
+            const point = circle.position; // Get the center of the circle
+
+            const vertex1 = poly.vertices[i]; // Get the first vertex
+            const vertex2 = poly.vertices[(i + 1) % poly.vertices.length]; // Get the second vertex (wraps around to the first vertex if the last vertex is reached)
+
+            const pSegDistInfo = Intersection.pointSegmentDistance(point, vertex1, vertex2, true); // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+
+            const closestPointSqDist = pSegDistInfo.dist; // Get the closest point on the edge to the point (the fourth argument is true to get the squared distance)
+
+            if (closestPointSqDist < minSquaredDistance){
+                minSquaredDistance = closestPointSqDist; // Update the minimum squared distance if the current squared distance is less than the minimum squared distance
+                contactCount = 1; // Update the contact count to 1
+                contactPoints = [pSegDistInfo.closestPoint]; // Update the contact points to the point
+            }
+        }
+
+        for (const cp of contactPoints){
+            const renderFunc = (canvas, ctx) => {
+                //draw the axis for debugging purposes
+                ctx.beginPath();
+                ctx.strokeStyle = 'green';
+                ctx.strokeWidth = 1;
+                ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.closePath();
+                
+            }
+
+            const renderAPI = collider1.rigidBody.engineAPI.getAPI('render');
+            const task = new renderAPI.constructor.RenderTask(renderFunc);
+            renderAPI.addTask(task);
+        }
 
         return contactPoints; // Return the contact points
     }
@@ -1270,7 +1344,7 @@ class CollisionSolver{
         rigidbody1.angularVelocity += a1TpoApply // Apply the angular impulse to the first rigidbody
         rigidbody2.angularVelocity -= a2TpoApply  // Apply the angular impulse to the second rigidbody
 
-        console.log(Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal), Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal)) // Debugging
+        //console.log(Vec2.cross(rigidBody1DistToContactPoint, impulseAlongNormal), Vec2.cross(rigidBody2DistToContactPoint, impulseAlongNormal)) // Debugging
 
         return {rigidbody1, rigidbody2}; // Return the updated rigidbodies
         
@@ -1328,11 +1402,22 @@ export class PhysicsModule extends Module{
         this.rigidBodies.push(rigidBody3);
 
         window.addEventListener('mousedown', (e) => {
+            
             const camera = this.engineAPI.getAPI('render').getCamera();
             const worldPos = camera.screenToWorld(e.clientX, e.clientY);
-            rigidBody2.position = new Vec2(worldPos.x, worldPos.y);
             
-            rigidBody2.velocity = new Vec2(-100, 0);
+            if (e.button === 0) {
+                rigidBody2.position = new Vec2(worldPos.x, worldPos.y);
+            
+                rigidBody2.velocity = new Vec2(-100, 0);
+            }
+
+            if (e.button === 1){
+                
+                rigidBody1.position = new Vec2(worldPos.x, worldPos.y);
+                rigidBody1.velocity = new Vec2(100, 0);
+            }
+            
         });
 
         rigidBody1.velocity = new Vec2(100, 0);
