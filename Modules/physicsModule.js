@@ -1,11 +1,6 @@
 import { ModuleAPI, Module } from "./moduleBase.js";
 import { Component } from "./entityModule.js";
 
-const Engine = Matter.Engine,
-        Bodies = Matter.Bodies,
-        Body = Matter.Body,
-        Composite = Matter.Composite,
-        Render = Matter.Render
 
 class TransformComponent extends Component{
     constructor(entity, parentModule, engineAPI, componentConfig){
