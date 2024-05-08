@@ -767,6 +767,26 @@ class Intersection{
     static lineToCircle(lineStart, lineEnd, circle){
         // Check if a line intersects a circle
         const line = Vec2.sub(lineEnd, lineStart); // Get the line
+        const lineStartToCircle = Vec2.sub(circle.position, lineStart); // Get the vector from the start of the line to the circle
+        const projection = Vec2.dot(lineStartToCircle, line); // Get the projection of the line start to circle vector onto the line
+        const distSq = Vec2.sqDist(lineStart, lineEnd); // Get the squared distance between the start and end of the line
+
+        const scaledProjection = projection / distSq; // Scale the projection
+        
+        const pointOnLine = Vec2.add(lineStart, Vec2.scale(Vec2.normalize(line), scaledProjection));
+        const distance = Vec2.dist(circle.position, pointOnLine);
+
+        if (distance < circle.radius){
+            const u1 = Vec2.sub(pointOnLine, lineStart);
+        }
+
+        else if (distance === circle.radius){
+            
+        }
+
+        else{
+            return false;
+        }
 
         
     }
@@ -1270,6 +1290,15 @@ class CollisionSolver{
         rigidbody2.angularVelocity -= a2TpoApply  // Apply the angular impulse to the second rigidbody
 
         return {rigidbody1, rigidbody2}; // Return the updated rigidbodies
+    }
+}
+
+class GPUDynamicTree{
+    constructor(){
+        this.nodes = [];
+        this.root = null;
+
+        
     }
 }
 

@@ -1368,9 +1368,10 @@ export class PhysicsModule extends Module{
             }
 
             if (e.button === 1){
+                const newRB = new Rigidbody(new Vec2(worldPos.x, worldPos.y), 0, 1, 1, []);
+                newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
+                this.rigidBodies.push(newRB);
                 
-                rigidBody1.position = new Vec2(worldPos.x, worldPos.y);
-                rigidBody1.velocity = new Vec2(100, 0);
             }
             
         });
