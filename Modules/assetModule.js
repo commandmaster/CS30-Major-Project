@@ -19,16 +19,14 @@ export class AssetModule extends Module {
 
     #loadAllAssets(assetConfigPath) {
         fetch(assetConfigPath)
-            .then(response => response.json())
-            .then(json => {
+            .then((response) => response.json())
+            .then((json) => {
                 for (let asset of json) {
-                    this.#loadAsset(asset.type, asset.path)
-                        .then(asset => {
-                            this.#pathToNameMap.set(asset.path, asset.name);
-                        });
+                    this.#loadAsset(asset.type, asset.path).then((asset) => {
+                        this.#pathToNameMap.set(asset.path, asset.name);
+                    });
                 }
             });
-        
     }
 
     #loadAsset(assetType, path) {
@@ -72,14 +70,11 @@ export class AssetModule extends Module {
     #loadJSON(path) {
         return new Promise((resolve, reject) => {
             fetch(path)
-                .then(response => response.json())
-                .then(json => {
+                .then((response) => response.json())
+                .then((json) => {
                     this.#assets[path] = json;
                     resolve(json);
                 });
         });
-        
     }
 }
-
-

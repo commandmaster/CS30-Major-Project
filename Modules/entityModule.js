@@ -1,6 +1,5 @@
 import { ModuleAPI, Module } from "./moduleBase.js";
 
-
 class Entity {
     components = new Map(); // Map<componentName, component>
     constructor(entityAPI, serializedComponents) {
@@ -19,68 +18,120 @@ class Entity {
         if (typeof this.serializedComponents === "undefined") return; // If the serialized components is undefined, return out of the function
 
         //Check the data type of the serialized components to see the serialization format of the components is an array or an object
-        (typeof this.serializedComponents === "object" ? Object.values(this.serializedComponents) : this.serializedComponents).forEach(component => {
+        (typeof this.serializedComponents === "object"
+            ? Object.values(this.serializedComponents)
+            : this.serializedComponents
+        ).forEach((component) => {
             this.createComponent(component); // Create the component
         });
     }
 
     #createTransformComponent(component, parentModule, parentModuleAPI) {
         // Create a new transform component instance from the JSON data
-        const transform = parentModuleAPI.constructor.TransformComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
+        const transform =
+            parentModuleAPI.constructor.TransformComponent.fromJSON(
+                this,
+                component,
+                parentModule,
+                this.entityAPI.engineAPI
+            );
     }
 
     #createRigidbodyComponent(component, parentModule, parentModuleAPI) {
         // Create a new rigidbody component instance from the JSON data
-        const rigidbody = parentModuleAPI.constructor.RigidbodyComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
+        const rigidbody =
+            parentModuleAPI.constructor.RigidbodyComponent.fromJSON(
+                this,
+                component,
+                parentModule,
+                this.entityAPI.engineAPI
+            );
     }
 
     #createAnimatorComponent(component, parentModule, parentModuleAPI) {
         // Create a new animator component instance from the JSON data
-        const animator = parentModuleAPI.constructor.AnimatorComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
+        const animator = parentModuleAPI.constructor.AnimatorComponent.fromJSON(
+            this,
+            component,
+            parentModule,
+            this.entityAPI.engineAPI
+        );
     }
 
     #createSpriteRendererComponent(component, parentModule, parentModuleAPI) {
         // Create a new sprite renderer component instance from the JSON data
-        const spriteRenderer = parentModuleAPI.constructor.SpriteRendererComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI); 
+        const spriteRenderer =
+            parentModuleAPI.constructor.SpriteRendererComponent.fromJSON(
+                this,
+                component,
+                parentModule,
+                this.entityAPI.engineAPI
+            );
     }
 
     #createScriptingComponent(component, parentModule, parentModuleAPI) {
         // Create a new scripting component instance from the JSON data
-        const scripting = parentModuleAPI.constructor.ScriptingComponent.fromJSON(this, component, parentModule, this.entityAPI.engineAPI);
+        const scripting =
+            parentModuleAPI.constructor.ScriptingComponent.fromJSON(
+                this,
+                component,
+                parentModule,
+                this.entityAPI.engineAPI
+            );
     }
- 
+
     createComponent(component) {
-        const componentAPI = this.entityAPI.engineAPI.getAPI(component.parentModule); // Get the API of the parent module stored in the serialized component
+        const componentAPI = this.entityAPI.engineAPI.getAPI(
+            component.parentModule
+        ); // Get the API of the parent module stored in the serialized component
 
         // Get the module of the parent module grabbed from the parent module API
         // This may seem backwards but the parent moduleAPI is stored in the engineAPI and the module is referenced in the mopduleAPI
-        const parentModule = componentAPI.module; 
+        const parentModule = componentAPI.module;
 
         // Check the type of the component and create the component
         switch (component.type.toLowerCase()) {
             case "transform":
-                this.#createTransformComponent(component, parentModule, componentAPI);
+                this.#createTransformComponent(
+                    component,
+                    parentModule,
+                    componentAPI
+                );
                 break;
             case "rigidbody":
-                this.#createRigidbodyComponent(component, parentModule, componentAPI);
+                this.#createRigidbodyComponent(
+                    component,
+                    parentModule,
+                    componentAPI
+                );
                 break;
             case "animatior":
-                this.#createAnimatorComponent(component, parentModule, componentAPI);
+                this.#createAnimatorComponent(
+                    component,
+                    parentModule,
+                    componentAPI
+                );
                 break;
             case "spriterenderer":
-                this.#createSpriteRendererComponent(component, parentModule, componentAPI);
+                this.#createSpriteRendererComponent(
+                    component,
+                    parentModule,
+                    componentAPI
+                );
                 break;
             case "scripting":
-                this.#createScriptingComponent(component, parentModule, componentAPI);
+                this.#createScriptingComponent(
+                    component,
+                    parentModule,
+                    componentAPI
+                );
                 break;
             default:
                 console.error("Invalid module type");
                 break;
         }
-        
     }
 }
-
 
 export class EntityAPI extends ModuleAPI {
     constructor(engineAPI) {
@@ -102,16 +153,14 @@ export class Component {
         this.componentConfig = componentConfig; // Configuration data for the component
     }
 
-    start(){
+    start() {
         // Start the component
-    
     }
 
-    update(){
+    update() {
         // Update the component
     }
 
-    
     toJSON() {
         // By default the component is serialized as a JSON string
         // We can't use the default replacer function because it will cause a circular reference error with the entity, parentModule, and engineAPI, we only want to serialize the componentConfig
@@ -122,7 +171,7 @@ export class Component {
 
             return acceptable ? value : undefined; // Return the value if it is acceptable, otherwise return undefined
         }
-    
+
         return JSON.stringify(this, replacer, 2); // Return the JSON string of the component ignoring the banned properties
     }
 
@@ -132,11 +181,7 @@ export class Component {
             json = JSON.parse(json);
         }
 
-
         const component = new Component(entity, parentModule, engineAPI, json);
         return component;
     }
 }
-
-
-
