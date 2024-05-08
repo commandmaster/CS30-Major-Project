@@ -1310,6 +1310,7 @@ class PhysicsEngine{
     static CollisionSolver = CollisionSolver;
     static CollisionData = CollisionData;
     static Intersection = Intersection;
+    static GPUDynamicTree = GPUDynamicTree;
 
     #timeStepLimit = 50; // Maximum time step to prevent spiral of death (ms) 
     constructor(maxTimeStep = 50){
