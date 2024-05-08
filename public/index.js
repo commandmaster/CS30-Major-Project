@@ -1,6 +1,6 @@
 console.log("Hello from index.js");
 
-import {Engine} from '/Engine.js';
+import {Engine} from "/FrontendModules/engine.js"
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
