@@ -14,14 +14,16 @@ const localIP = "localhost"; // temporary fix for testing purposes
 
 const publicPath = path.join(__dirname, "..", "public"); // Path to the public folder containing the client-side code
 const modulesPath = path.join(__dirname, "..", "Modules"); // Path to the Modules folder containing both client and server-side code
+const sharedCodePath = path.join(__dirname, "..", "SharedCode"); // Path to the Shared folder containing code shared between the client and server
 
 // Serve the public folder and the Modules folder
 app.use(express.static(publicPath));
 app.use(express.static(modulesPath));
+app.use(express.static(sharedCodePath));
 
 // Set the app to listen on the port and IP
 const server = app.listen(port, localIP, () => {
-  console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });
 
 // Import socket.io and create a new instance of it using the created web server
