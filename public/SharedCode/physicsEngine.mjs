@@ -1,8 +1,31 @@
+/**
+ * @typedef {Object} Vec2 A 2D vector 
+ */
+
+/**
+ * @class Vec2
+ * @classdesc A 2D vector class fro creating and preforming vector operations
+ */
 class Vec2{
+
+    /**
+     * @static
+     * @memberof Vec2
+     * @description A vector with a value of (0, 0)
+     */
     static get zero(){
         return new Vec2(0, 0);
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 The first vector
+     * @param {Vec2} v2 The second vector
+     * @returns {Vec2} The midpoint between the two vectors
+     * @static
+     * @memberof Vec2
+     * @description Calculate the midpoint between two vectors
+     */
     static midpoint(v1, v2){
         // Calculate the midpoint between two vectors
         const valueToAddToStartVector = Vec2.add(v1.clone().scale(-1), v2).scale(0.5);
