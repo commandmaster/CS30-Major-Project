@@ -32,6 +32,13 @@ class Vec2{
         return Vec2.add(v1, valueToAddToStartVector);
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 The first vector
+     * @param {Vec2} v2 The second vector
+     * @param {Number} tolerance The tolerance for the comparison
+     * @returns {Boolean} True if the two vectors are equal, false otherwise 
+     */
     static isEqual(v1, v2, tolerance=0.001){
         // Check if two vectors are equal
         return Math.abs(v1.x - v2.x) <= tolerance && Math.abs(v1.y - v2.y) <= tolerance;
