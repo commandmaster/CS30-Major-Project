@@ -37,29 +37,66 @@ class Vec2{
      * @param {Vec2} v1 The first vector
      * @param {Vec2} v2 The second vector
      * @param {Number} tolerance The tolerance for the comparison
-     * @returns {Boolean} True if the two vectors are equal, false otherwise 
+     * @returns {Boolean} True if the two vectors are equal, false otherwise
+     * @static 
+     * @memberof Vec2
+     * @description Check if two vectors are close enough to be considered equal 
      */
     static isEqual(v1, v2, tolerance=0.001){
         // Check if two vectors are equal
         return Math.abs(v1.x - v2.x) <= tolerance && Math.abs(v1.y - v2.y) <= tolerance;
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 The first vector  
+     * @param {Vec2} v2 The second vector 
+     * @returns {Number} The distance between the two vectors
+     * @static
+     * @memberof Vec2
+     * @description Calculate the distance between two vectors 
+     */
     static dist(v1, v2){
         // Calculate the distance between two vectors
         return Math.sqrt((v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2);
     }
 
+    /** 
+     * @param {Vec2} v1 The first vector 
+     * @param {Vec2} v2 
+     * @returns {Number} The squared distance between the two vectors
+     * @static
+     * @memberof Vec2
+     * @description Calculate the squared distance between two vectors 
+     */
     static sqDist(v1, v2){
         // Calculate the squared distance between two vectors
         return (v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2;
     }
 
+    /**
+     * 
+     * @param {Vec2} The vector to convert to normalized form 
+     * @returns {Vec2} A new vector that is the normalized version of the input vector
+     * @static
+     * @memberof Vec2
+     * @description Normalize a vector (make it's magnitude 1) 
+     */
     static normalize(v){
         // Normalize a vector and return the result as a new Vec2
         const mag = v.mag;
         return Vec2.divide(v, mag);
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 
+     * @param {Vec2} v2 
+     * @returns {Number} The dot product of the two vectors
+     * @static
+     * @memberof Vec2
+     * @description Calculate the dot product of two vectors 
+     */
     static dot(v1, v2){
         // Dot product of two vectors
         // Returns the projection of the first vector onto the second vector
@@ -71,16 +108,40 @@ class Vec2{
         return result;
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 The first vector to cross 
+     * @param {Vec2} v2 The second vector to cross
+     * @returns {Number} The cross product of the two vectors (The magnitude of the 3rd dimensional of the cross product)
+     * @static
+     * @memberof Vec2
+     * @description Calculate the cross product of two vectors
+     */
     static cross(v1, v2){
         // cross product of two vectors
         return v1.x*v2.y - v1.y*v2.x;
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 The first vector to to be subtracted from 
+     * @param {Vec2} v2 The second vector to subtract
+     * @returns {Vec2} The result of the subtraction of the two vectors
+     * @static
+     * @memberof Vec2
+     * @description Subtract two vectors
+     */
     static sub(v1, v2){
         // Subtract two vectors and return the result as a new Vec2
         return new Vec2(v2.x - v1.x, v2.y - v1.y);
     }
 
+    /**
+     * 
+     * @param {Vec2} v1 
+     * @param {Vec2} v2 
+     * @returns 
+     */
     static add(v1, v2){
         // Add two vectors and return the result as a new Vec2
         return new Vec2(v1.x + v2.x, v1.y + v2.y);
