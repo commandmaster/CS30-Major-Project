@@ -1,5 +1,5 @@
 import { ModuleAPI, Module } from "./moduleBase.js";
-import { Component } from "./entityModule.js";
+import { Component } from "./moduleBase.js";
 
 class Camera{
     #baseResolution;

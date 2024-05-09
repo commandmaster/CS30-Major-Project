@@ -1,4 +1,4 @@
-export class Vec2{
+class Vec2{
     static get zero(){
         return new Vec2(0, 0);
     }
@@ -236,8 +236,7 @@ export class Vec2{
         this.#normalized = this.#calculateNormalized();
     }
 }
-
-export class BoundingBox {
+class BoundingBox {
     constructor(position, width, height){
         this.position = position;
         this.width = width;
@@ -245,7 +244,7 @@ export class BoundingBox {
     }
 }
 
-export class ConvexCollider{
+class ConvexCollider{
     #vertices;
     #rotatedVertices;
     #position;
@@ -397,7 +396,7 @@ export class ConvexCollider{
 
 
 
-export class RectangleCollider extends ConvexCollider{
+class RectangleCollider extends ConvexCollider{
     constructor(rigidBody, x, y, rotation, mass, width, height){
         super(rigidBody, x, y, rotation, mass, [
             new Vec2(-width / 2, -height / 2),
@@ -408,7 +407,7 @@ export class RectangleCollider extends ConvexCollider{
     }
 }
 
-export class TriangleCollider extends ConvexCollider{
+class TriangleCollider extends ConvexCollider{
     constructor(rigidBody, x, y, rotation, mass, width, height){
         super(rigidBody, x, y, rotation, mass, [
             new Vec2(0, -height / 2),
@@ -418,7 +417,7 @@ export class TriangleCollider extends ConvexCollider{
     }
 }
 
-export class CircleCollider{
+class CircleCollider{
     constructor(rigidBody, offsetX, offsetY, mass, radius){
         this.rigidBody = rigidBody;
         this.offset = new Vec2(offsetX, offsetY);
@@ -451,7 +450,7 @@ export class CircleCollider{
     }
 }
 
-export class Rigidbody{
+class Rigidbody{
     #velocity = new Vec2(0, 0); // Linear velocity
     #acceleration = new Vec2(0, 70); // Linear acceleration
     #angularVelocity = 0; // Angular velocity
@@ -672,7 +671,7 @@ export class Rigidbody{
 
 
 
-export class CollisionData{
+class CollisionData{
     constructor(axis, overlap, collider1, collider2, collisionPoints,){
         this.axis = Vec2.normalize(axis); // Minimum translation vector (MTV) axis
         this.overlap = overlap; // Overlap distance
@@ -683,7 +682,7 @@ export class CollisionData{
 }  
 
 
-export class AABB{
+class AABB{
     static checkCollision(boundingBox1, boundingBox2){
         const width1 = boundingBox1.width; // Get the width of the first bounding box
         const height1 = boundingBox1.height; // Get the height of the first bounding box
@@ -710,7 +709,7 @@ export class AABB{
     }
 }
 
-export class Intersection{
+class Intersection{
     static lineToLine(line1Start, line1End, line2Start, line2End){
         // Check if two lines intersect and give back the point of intersection as a Vec2 or false if they don't intersect - https://www.youtube.com/watch?v=bvlIYX9cgls
 
@@ -800,7 +799,7 @@ export class Intersection{
 }
 
 
-export class SAT{
+class SAT{
     static circleToCircle(collider1, collider2){
         // Check for collision between two circles
         if (AABB.checkCollision(collider1.boundingBox, collider2.boundingBox) === false) return false; // Return false if there is no overlap
@@ -1150,7 +1149,7 @@ export class SAT{
 
 
 
-export class CollisionSolver{
+class CollisionSolver{
     static resolveCollision(rigidbody1, rigidbody2, collisionData){
         // Resolve the collision between two rigidbodies
         const collisionNormal = collisionData.axis; // Get the collision normal (MTV axis)
@@ -1249,13 +1248,13 @@ export class CollisionSolver{
     }
 }
 
-export class GPUDynamicTree{
+class GPUDynamicTree{
     constructor(){
         console.log('test')
     }
 }
 
-export class PhysicsEngine{
+class PhysicsEngine{
     #maxTimeStep; //Maximum time step for the physics engine in milliseconds
     constructor(maxTimeStep=50){
         this.#maxTimeStep = maxTimeStep;
@@ -1292,20 +1291,20 @@ export class PhysicsEngine{
         for (const collider1 of rigidbody1.colliders){
             for (const collider2 of rigidbody2.colliders){
                 if (collider1.type === 'circle' && collider2.type === 'circle'){
-                    this.#circleToCircle(collider1, collider2);
+                    this.#circleToCircle(rigidbody1, rigidbody2, collider1, collider2);
                 }
 
                 else if (collider1.type === 'convex' && collider2.type === 'circle'){
-                    this.#polyToCircle(collider1, collider2);
+                    this.#polyToCircle(rigidbody1, rigidbody2, collider1, collider2);
                 }
 
                 else if (collider1.type === 'circle' && collider2.type === 'convex'){
-                    this.#circleToPoly(collider1, collider2);
+                    this.#circleToPoly(rigidbody1, rigidbody2, collider1, collider2);
                 }
 
 
                 else if (collider1.type === 'convex' && collider2.type === 'convex'){
-                    this.#polyToPoly(collider1, collider2);
+                    this.#polyToPoly(rigidbody1, rigidbody2, collider1, collider2);
                 }
             }
         }
@@ -1313,63 +1312,67 @@ export class PhysicsEngine{
 
     //#region Handle Collisions between different types of colliders
     // Use these methods to reduce nesting in the #checkCollision method
-    #circleToCircle(c1, c2){
+    // r1 and r2 are the rigidbodies
+    // c/p1 and c/p2 are the colliders
+    #circleToCircle(r1, r2, c1, c2){
         const collisionData = SAT.circleToCircle(c1, c2);                   
 
         if (collisionData !== false){
-            this.currentlyColliding.push({c1, c2, collisionData});
-            c1.onCollisionEnter(collisionData, c2);
-            c2.onCollisionEnter(collisionData, c1);
+            this.currentlyColliding.push({r1, r2, collisionData});
+            r1.onCollisionEnter(collisionData, r2);
+            r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(c1, c2, collisionData);
+            CollisionSolver.resolveCollision(r1, r2, collisionData);
 
-            c1.onCollisionExit(collisionData, c2);
-            c2.onCollisionExit(collisionData, c1);
+            r1.onCollisionExit(collisionData, r2);
+            r2.onCollisionExit(collisionData, r1);
         }
     }
 
-    #polyToPoly(p1, p2){
+    #polyToPoly(r1, r2, p1, p2){
         const collisionData = SAT.checkPolyToPoly(p1, p2);
         if (collisionData !== false){
-            this.currentlyColliding.push({p1, p2, collisionData});
-            p1.onCollisionEnter(collisionData, p2);
-            p2.onCollisionEnter(collisionData, p1);
+            this.currentlyColliding.push({r1, r2, collisionData});
+            r1.onCollisionEnter(collisionData, r2);
+            r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(p1, p2, collisionData);
+            CollisionSolver.resolveCollision(r1, r2, collisionData);
 
-            p1.onCollisionExit(collisionData, p2);
-            p2.onCollisionExit(collisionData, p1);
+            r1.onCollisionExit(collisionData, r2);
+            r2.onCollisionExit(collisionData, r1);
         }
     }
 
-    #polyToCircle(p, c){
-        const collisionData = SAT.circleToPoly(c, p);
+    #polyToCircle(r1, r2, p, c){
+        const collisionData = SAT.circleToPoly(p, c);
         if (collisionData !== false){
-            this.currentlyColliding.push({p, c, collisionData});
-            p.onCollisionEnter(collisionData, c);
-            c.onCollisionEnter(collisionData, p);
+            this.currentlyColliding.push({r1, r2, collisionData});
+            r1.onCollisionEnter(collisionData, r2);
+            r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(p, c, collisionData);
+            CollisionSolver.resolveCollision(r1, r2, collisionData);
 
-            p.onCollisionExit(collisionData, c);
-            c.onCollisionExit(collisionData, p);
+            r1.onCollisionExit(collisionData, r2);
+            r2.onCollisionExit(collisionData, r1);
         }
     }
 
-    #circleToPoly(c, p){
+    #circleToPoly(r1, r2, c, p){
         const collisionData = SAT.circleToPoly(c, p);
         if (collisionData !== false){
-            this.currentlyColliding.push({c, p, collisionData});
-            c.onCollisionEnter(collisionData, p);
-            p.onCollisionEnter(collisionData, c);
+            this.currentlyColliding.push({r1, r2, collisionData});
+            r1.onCollisionEnter(collisionData, r2);
+            r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(c, p, collisionData);
-
-            c.onCollisionExit(collisionData, p);
-            p.onCollisionExit(collisionData, c);
+            CollisionSolver.resolveCollision(r1, r2, collisionData);
+            
+            r1.onCollisionExit(collisionData, r2);
+            r2.onCollisionExit(collisionData, r1);
         }
     }
     //#endregion
     //#endregion
 }
+
+export {PhysicsEngine, Vec2, BoundingBox, CircleCollider, RectangleCollider, TriangleCollider, ConvexCollider, Rigidbody};
 

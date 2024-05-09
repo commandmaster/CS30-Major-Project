@@ -1,12 +1,39 @@
 import { ModuleAPI, Module } from "./moduleBase.js";
-import { Component } from "./entityModule.js";
+import { Component } from "./moduleBase.js";
 
 import * as Physics from "../SharedCode/physicsEngine.mjs";
-const { SAT, Vec2, RectangleCollider, CircleCollider, TriangleCollider, Rigidbody, CollisionSolver, PhysicsEngine } = Physics;
+const { Vec2, RectangleCollider, CircleCollider, TriangleCollider, Rigidbody, PhysicsEngine } = Physics;
+
+
+console.log(Component)
+
+export class TransformComponent extends Component{
+    constructor(entity, moduleAPI, {position, rotation}){
+        super(entity, moduleAPI, {});
+        this.position = position;
+        this.rotation = rotation;
+    }
+
+    static fromJSON(entity, moduleAPI, jsonObject){
+        return new TransformComponent(entity, moduleAPI, {position: new Vec2(jsonObject.position.x, jsonObject.position.y), rotation: jsonObject.rotation});
+    }
+}
 
 
 
+export class PhysicsComponent extends Component{
+    constructor(entity, moduleAPI, {rigidBody, collider}){
+        super(entity, moduleAPI, {});
+        this.rigidBody = rigidBody;
+        this.collider = collider;
+    }
 
+    static fromJSON(entity, moduleAPI, jsonObject){
+        const rigidBody = new Rigidbody(new Vec2(jsonObject.rigidBody.position.x, jsonObject.rigidBody.position.y), jsonObject.rigidBody.rotation, jsonObject.rigidBody.mass, jsonObject.rigidBody.restitution, jsonObject.rigidBody.colliders);
+        const collider = new CircleCollider(rigidBody, jsonObject.collider.position.x, jsonObject.collider.position.y, jsonObject.collider.restitution, jsonObject.collider.radius);
+        return new PhysicsComponent(entity, moduleAPI, {rigidBody, collider});
+    }
+}
 
 
 
@@ -16,12 +43,9 @@ const { SAT, Vec2, RectangleCollider, CircleCollider, TriangleCollider, Rigidbod
 
 
 export class PhysicsAPI extends ModuleAPI {
-    static SAT =  SAT;
-    static Vec2 = Vec2;
-    static RectangleCollider = RectangleCollider;
-    static CircleCollider = CircleCollider;
-    static Rigidbody = Rigidbody;
-    static CollisionSolver = CollisionSolver;
+    static Physics = Physics;
+    static TransformComponent = TransformComponent;
+    static PhysicsComponent = PhysicsComponent;
 
     constructor(engineAPI, module) {
         super(engineAPI, module);
@@ -37,8 +61,7 @@ export class PhysicsModule extends Module{
         super(engineAPI);
         this.physicsAPI = engineAPI.getAPI('physics');
 
-        this.rigidBodies = [];
-        this.currentCollisions = [];
+        this.physicsEngine = new PhysicsEngine(this.#timeStepLimit); 
     }
 
     preload(){
@@ -55,15 +78,11 @@ export class PhysicsModule extends Module{
         rigidBody1.addCollider(new RectangleCollider(rigidBody1, 0, 0, 35, 1, 100, 100));
         rigidBody1.addCollider(new CircleCollider(rigidBody1, 50, 0, 1, 20));
         rigidBody2.addCollider(new RectangleCollider(rigidBody2, 0, 0, 0, 1, 100, 100));
-        rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 20));
+        rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 50));
         rigidBody3.addCollider(new TriangleCollider(rigidBody3, 0, 0, 0, 1, 100, 100));
         rigidBody3.addCollider(new RectangleCollider(rigidBody3, -150, 0, 0, 1, 100, 100));
         
 
-
-        this.rigidBodies.push(rigidBody1);
-        this.rigidBodies.push(rigidBody2);
-        this.rigidBodies.push(rigidBody3);
 
         window.addEventListener('mousedown', (e) => {
             
@@ -77,9 +96,11 @@ export class PhysicsModule extends Module{
             }
 
             if (e.button === 1){
-                const newRB = new Rigidbody(new Vec2(worldPos.x, worldPos.y), 0, 1, 1, []);
-                newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
-                this.rigidBodies.push(newRB);
+                for (let i = 0; i < 100; i++){
+                    const newRB = new Rigidbody(new Vec2(worldPos.x + i * 5, worldPos.y + Math.random()*150 - 75), 0, 1, 1, []);
+                    newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
+                    this.addRigidbody(newRB);
+                }
                 
             }
             
@@ -91,100 +112,25 @@ export class PhysicsModule extends Module{
 
         const ground = new Rigidbody(new Vec2(0, 500), 0, Infinity, 1, []);
         ground.addCollider(new RectangleCollider(ground, 0, 0, 0, 1, 2000, 100));
-        
-        this.rigidBodies.push(ground);
+
+        this.addRigidbody(rigidBody1);
+        this.addRigidbody(rigidBody2);
+        this.addRigidbody(rigidBody3);
+        this.addRigidbody(ground);
+
     }
 
     update(dt){
-        dt = Math.min(dt, this.#timeStepLimit / 1000); // Limit the time step to prevent spiral of death
-        this.currentCollisions = [];
-        
-        for (const body of this.rigidBodies){
-            body.stepSimulation(dt);
-        }
-
-
-        for (let i = 0; i < this.rigidBodies.length; i++){
-            for (let j = i + 1; j < this.rigidBodies.length; j++){
-                const body1 = this.rigidBodies[i];
-                const body2 = this.rigidBodies[j];
-
-                for (const collider1 of body1.colliders){
-                    for (const collider2 of body2.colliders){
-                        if (collider1.type === 'circle' && collider2.type === 'convex'){
-                            const collisionData = SAT.circleToPoly(collider1, collider2);
-
-                            if (collisionData){
-                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
-
-                                body1.onCollisionEnter(collisionData, body2);
-                                body2.onCollisionEnter(collisionData, body1);
-
-                                CollisionSolver.resolveCollision(body1, body2, collisionData);
-
-                                body1.onCollisionExit(collisionData, body2);
-                                body2.onCollisionExit(collisionData, body1);
-                            }
-                        }
-                        else if (collider1.type === 'convex' && collider2.type === 'circle'){
-                            const collisionData = SAT.circleToPoly(collider1, collider2);
-
-                            if (collisionData){
-                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
-
-                                body1.onCollisionEnter(collisionData, body2);
-                                body2.onCollisionEnter(collisionData, body1);
-
-                                CollisionSolver.resolveCollision(body1, body2, collisionData);
-
-                                body1.onCollisionExit(collisionData, body2);
-                                body2.onCollisionExit(collisionData, body1);
-                            }
-                        }
-                        else if (collider1.type === 'convex' && collider2.type === 'convex'){
-                            const collisionData = SAT.checkPolyToPoly(collider1, collider2);
-
-                            if (collisionData){
-                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
-
-                                body1.onCollisionEnter(collisionData, body2);
-                                body2.onCollisionEnter(collisionData, body1);
-
-                                CollisionSolver.resolveCollision(body1, body2, collisionData);
-
-                                body1.onCollisionExit(collisionData, body2);
-                                body2.onCollisionExit(collisionData, body1);
-                            }
-                        }
-                        else if (collider1.type === 'circle' && collider2.type === 'circle'){
-                            const collisionData = SAT.circleToCircle(collider1, collider2);
-
-                            if (collisionData){
-                                this.currentCollisions.push({body1, body2, collider1, collider2, collisionData});
-
-                                body1.onCollisionEnter(collisionData, body2);
-                                body2.onCollisionEnter(collisionData, body1);
-
-                                CollisionSolver.resolveCollision(body1, body2, collisionData);
-
-                                body1.onCollisionExit(collisionData, body2);
-                                body2.onCollisionExit(collisionData, body1);
-                            }
-                        }
-
-                        
-                    }
-                }
-               
-            }
-        }
-
-
+        this.physicsEngine.stepSimulation(dt);
         this.debugDraw();
     }
 
+    addRigidbody(rigidBody){
+        this.physicsEngine.addRigidbody(rigidBody);
+    }
+
     debugDraw(){
-        for (const body of this.rigidBodies){
+        for (const body of this.physicsEngine.rigidBodies){
             for (const collider of body.colliders){
                 if (collider.type === 'circle'){
                     const renderFunc = (canvas, ctx) => {

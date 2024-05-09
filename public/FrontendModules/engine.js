@@ -34,6 +34,9 @@ export class EngineAPI {
         if (typeof this.APIs[module] === "undefined")
             throw new Error(`Module ${module} does not exist`);
         else if (typeof module === "string") {
+
+            const lowcaseModule = module.toLowerCase(); // convert the module to lowercase to match the key in the APIs object
+            if (lowcaseModule !== module) console.warn(`Module ${module} is not lowercase`);
             return this.APIs[module];
         }
 
