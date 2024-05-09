@@ -255,6 +255,8 @@ class ConvexCollider{
         this.#rotatedVertices = []; // the vertices of the collider after rotation
         this.mass = mass; // Mass of the collider
 
+        this.isTrigger = false; // Is the collider a trigger
+
         this.offset = new Vec2(offsetX, offsetY); // Offset of the collider from the center of the rigidbody
         this.#calculateWorldPosition(); // Calculate the world position of the collider
         this.#calculateVertices(); // Calculate the vertices of the collider
@@ -424,6 +426,7 @@ class CircleCollider{
         this.mass = mass;
         this.radius = radius;
         this.type = 'circle';
+        this.isTrigger = false;
 
         this.refresh();
         this.boundingBox = new BoundingBox(Vec2.sub(this.position, new Vec2(this.radius, this.radius)), this.radius * 2, this.radius * 2);
@@ -1250,7 +1253,7 @@ class CollisionSolver{
 
 class GPUDynamicTree{
     constructor(){
-        console.log('test')
+        throw new Error('GPUDynamicTree is not implemented yet');
     }
 }
 
@@ -1322,7 +1325,7 @@ class PhysicsEngine{
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(r1, r2, collisionData);
+            if (!(c1.isTrigger || c2.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
 
             r1.onCollisionExit(collisionData, r2);
             r2.onCollisionExit(collisionData, r1);
@@ -1336,7 +1339,7 @@ class PhysicsEngine{
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(r1, r2, collisionData);
+            if (!(p1.isTrigger || p2.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
 
             r1.onCollisionExit(collisionData, r2);
             r2.onCollisionExit(collisionData, r1);
@@ -1350,7 +1353,7 @@ class PhysicsEngine{
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(r1, r2, collisionData);
+            if (!(p.isTrigger || c.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
 
             r1.onCollisionExit(collisionData, r2);
             r2.onCollisionExit(collisionData, r1);
@@ -1364,7 +1367,7 @@ class PhysicsEngine{
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
 
-            CollisionSolver.resolveCollision(r1, r2, collisionData);
+            if (!(c.isTrigger || p.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
             
             r1.onCollisionExit(collisionData, r2);
             r2.onCollisionExit(collisionData, r1);

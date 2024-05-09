@@ -8,6 +8,8 @@ import { PhysicsAPI, PhysicsModule } from "./physicsModule.js";
 import { RenderAPI, RenderModule } from "./renderModule.js";
 import { ScriptingAPI, ScriptingModule } from "./scriptingModule.js";
 
+import { Vec2 } from "../SharedCode/physicsEngine.mjs";
+
 
 class Entity {
     components = new Map(); // Map<componentName, component>
@@ -38,7 +40,7 @@ class Entity {
         const transform = PhysicsAPI.TransformComponent.fromJSON(
             this,
             component,
-            parentModule,
+            parentModule, 
             this.entityAPI.engineAPI
         );
 
@@ -94,8 +96,21 @@ class Entity {
     }
 
     createComponent(component) {
-        
         let parentModule; // Parent module of the component - One of the core engine systems/modules (e.g. Physics, Graphics, etc.)
+
+        if (component === null || component === undefined){
+            throw new Error(`Component is ${typeof component}!`);
+        }
+
+        if (typeof component !== "object") {
+            throw new Error(`The component is not an object. Invalid!`);
+        }
+
+        if (typeof component.type === "undefined") {
+            throw new Error(`The Components type property is undefined!`);
+        }
+
+
         // Check the type of the component and create the component
         switch (component.type.toLowerCase()) {
             case "transform":
@@ -134,13 +149,37 @@ class Entity {
                 );
                 break;
             default:
-                console.error("Invalid module type");
-                break;
+                if (typeof component.type === "string" || component.type.toLowerCase() !== component.type) {
+                    throw new Error(`Component ${component.type} does not exist. Make sure the component type is a valid string and is LOWERCASE!`);
+                }
+                    
+                throw new Error(`Component ${component.type} does not exist or is not a valid component type!`);
         }
+    }
+
+    toJson() {
+        let serizedComponents = {};
+        this.components.forEach((component, key) => {
+            serizedComponents[key] = component.toJSON();
+        });
+        return serizedComponents;
+    }
+
+    static fromJSON(entityAPI, serializedEntity, {position, rotation, velocity}) {
+        if (typeof serializedEntity === 'string') serializedEntity = JSON.parse(serializedEntity);
+
+        if (!serializedEntity instanceof Object) throw new Error("Serialized entity must be a valid Object or JSON string.");
+
+        const newEntity = new Entity(entityAPI, serializedEntity);
+
+        if (position instanceof Vec2 && newEntity.components.transform) newEntity.components.transform.position = position;
+        if (rotation instanceof Number && newEntity.components.transform) newEntity.components.transform.rotation = rotation;
+        if (velocity instanceof Vec2 && newEntity.components.rigidbody) newEntity.components.rigidbody.velocity = velocity;
     }
 }
 
 export class EntityAPI extends ModuleAPI {
+    static Entity = Entity;
     constructor(engineAPI) {
         super(engineAPI);
     }

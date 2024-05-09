@@ -5,7 +5,6 @@ import * as Physics from "../SharedCode/physicsEngine.mjs";
 const { Vec2, RectangleCollider, CircleCollider, TriangleCollider, Rigidbody, PhysicsEngine } = Physics;
 
 
-console.log(Component)
 
 export class TransformComponent extends Component{
     constructor(entity, moduleAPI, {position, rotation}){
@@ -21,7 +20,7 @@ export class TransformComponent extends Component{
 
 
 
-export class PhysicsComponent extends Component{
+export class RigidbodyComponent extends Component{
     constructor(entity, moduleAPI, {rigidBody, collider}){
         super(entity, moduleAPI, {});
         this.rigidBody = rigidBody;
@@ -45,7 +44,7 @@ export class PhysicsComponent extends Component{
 export class PhysicsAPI extends ModuleAPI {
     static Physics = Physics;
     static TransformComponent = TransformComponent;
-    static PhysicsComponent = PhysicsComponent;
+    static RigidbodyComponent = RigidbodyComponent;
 
     constructor(engineAPI, module) {
         super(engineAPI, module);
