@@ -57,6 +57,52 @@ export class EngineAPI {
     }
 }
 
+
+export class Level{
+    constructor(engineAPI, entities, levelManagerName){
+        this.engineAPI = engineAPI;// Engine API
+        this.entities = entities;// Entities in the level
+        
+        const scriptingAPI = engineAPI.getAPI('scripting'); // Get the scripting API
+        this.levelManager = scriptingAPI.instantiateLevelManager(levelManagerName, this, this.engineAPI); // Instantiate the level manager
+        this.levelManagerName = levelManagerName;
+    }
+
+    start(){
+        this.levelManager.Start();
+    }
+
+    update(dt){
+        this.levelManager.Update(dt);
+    }
+
+    end(){
+        this.levelManager.End();
+    }
+
+    toJSON(){
+        const replacer = (key, value) => {
+            if (key === 'engineAPI') return undefined;
+            if (key === 'levelManager') return this.levelManagerName;
+
+            return value;
+        }
+        return JSON.stringify(this, replacer);
+    }
+
+    static fromJSON(engineAPI, jsonObject){
+        const position = new Vec2(jsonObject.components.transform.position.x, jsonObject.components.transform.position.y);
+        const rotation = jsonObject.components.transform.rotation;
+        const velocity = new Vec2(jsonObject.components.rigidbody.velocity.x, jsonObject.components.rigidbody.velocity.y);
+
+        const entities = jsonObject.entities.map(entity => EntityAPI.Entity.fromJSON(engineAPI, entity, {position, rotation, velocity}));
+        return new Level(engineAPI, entities, jsonObject.levelManager);
+    }
+
+    
+}
+
+
 export class Engine {
     #lastUpdate = performance.now();
 

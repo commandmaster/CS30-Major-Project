@@ -3,11 +3,31 @@
  */
 
 /**
+ * @typedef {Object} BoundingBox A bounding box object
+ * @property {Vec2} position The position of the bounding box
+ * @property {Number} width The width of the bounding box
+ * @property {Number} height The height of the bounding box
+ */
+
+/**
+ * @typedef {Object} Collider A collider object
+ * @property {Vec2} position The position of the collider
+ */
+
+/**
+ * @typedef {RigidBody} RigidBody A rigidbody object
+ * @property {Vec2} position The position of the rigidbody
+ * @property {Number} rotation The rotation of the rigidbody
+ * @property {Number} mass The mass of
+ * @property {Number} restitution The coefficient of restitution (bounciness) of the rigidbody
+ * @property {Array<Collider>} colliders The colliders attached to the rigidbody
+ */
+
+/**
  * @class Vec2
  * @classdesc A 2D vector class fro creating and preforming vector operations
  */
 class Vec2{
-
     /**
      * @static
      * @memberof Vec2
@@ -36,7 +56,7 @@ class Vec2{
      * 
      * @param {Vec2} v1 The first vector
      * @param {Vec2} v2 The second vector
-     * @param {Number} tolerance The tolerance for the comparison
+     * @param {Number} [tolerance=0.001] The tolerance for the comparison
      * @returns {Boolean} True if the two vectors are equal, false otherwise
      * @static 
      * @memberof Vec2
@@ -138,25 +158,53 @@ class Vec2{
 
     /**
      * 
-     * @param {Vec2} v1 
-     * @param {Vec2} v2 
-     * @returns 
+     * @param {Vec2} v1 The first vector to add
+     * @param {Vec2} v2 The second vector to add
+     * @returns {Vec2} The result of the addition of the two vectors
+     * @static  
+     * @memberof Vec2
+     * @description Add two vectors
      */
     static add(v1, v2){
         // Add two vectors and return the result as a new Vec2
         return new Vec2(v1.x + v2.x, v1.y + v2.y);
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to scale 
+     * @param {Vec2} scalar The scalar value to scale the vector by
+     * @returns {Vec2} The result of scaling the vector by the scalar value
+     * @static
+     * @memberof Vec2
+     * @description Scale a vector by a scalar value (same as multiplying the vector by the scalar value)
+     */
     static scale(v, scalar){
         // Scale a vector by a scalar value and return the result as a new Vec2
         return new Vec2(v.x * scalar, v.y * scalar);
     }
-
+    
+    /**
+     * 
+     * @param {Vec2} v The vector to divide 
+     * @param {Number} scalar The scalar value to divide the vector by
+     * @returns {Vec2} The result of dividing the vector by the scalar value
+     * @static
+     * @memberof Vec2
+     * @description Divide a vector by a scalar value
+     */
     static divide(v, scalar){
         // Divide a vector by a scalar value and return the result as a new Vec2
         return new Vec2(v.x / scalar, v.y / scalar);
     }
-
+    /**
+     * 
+     * @param {Vec2} v The vector to calculate the magnitude of
+     * @return {Number} The magnitude of the vector
+     * @static
+     * @memberof Vec2
+     * @description Calculate the magnitude of a vector
+     */
     static mag(v){
         // Calculate the magnitude of a vector
         return Math.sqrt((v.x ** 2) + (v.y ** 2));
@@ -168,6 +216,15 @@ class Vec2{
     #isNormalized;
     #normalized;
     #angle;
+    
+    /**
+     * 
+     * @param {Number} x The x component of the vector 
+     * @param {Number} y The y component of the vector
+     * @description Create a new Vec2 instance
+     * @constructor
+     * @memberof Vec2
+     */
     constructor(x, y){
         this.#x = x;
         this.#y = y;
@@ -178,6 +235,13 @@ class Vec2{
         this.#angle = Math.atan2(this.y, this.x);
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to subtract from this vector
+     * @returns {Vec2} This vector after the subtraction
+     * @memberof Vec2
+     * @description Subtract a vector from this vector
+     */
     sub(v){
         // Subtract a vector from this vector
         this.#x -= v.x;
@@ -185,7 +249,13 @@ class Vec2{
 
         return this;
     }
-
+    /**
+     * 
+     * @param {Vec2} v The vector to add to this vector 
+     * @returns {Vec2} This vector after the addition
+     * @memberof Vec2
+     * @description Add a vector to this vector
+     */
     add(v){
         // Add a vector to this vector
         this.#x += v.x;
@@ -194,21 +264,50 @@ class Vec2{
         return this;
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to calculate the distance to 
+     * @returns {Number} The distance between this vector and the other vector
+     * @memberof Vec2
+     * @description Calculate the distance between this vector and another vector
+     */
     dist(v){
         // Calculate the distance between this vector and another vector
         return Math.sqrt((v.x - this.#x) ** 2 + (v.y - this.#y) ** 2);
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to calculate the squared distance to
+     * @returns {Number} The squared distance between this vector and the other vector
+     * @memberof Vec2
+     * @description Calculate the squared distance between this vector and another vector
+     */
     sqDist(v){
         // Calculate the squared distance between this vector and another vector
         return (v.x - this.#x) ** 2 + (v.y - this.#y) ** 2;
     }
-
+    
+    /**
+     * 
+     * @param {Vec2} v The vector to compare to
+     * @param {Number} [tolerance=0.001] The tolerance for the comparison (minimum difference between the two vectors to be considered equal)
+     * @returns {Boolean} True if the two vectors are equal, false otherwise
+     * @memberof Vec2
+     * @description Check if this vector is equal to another vector 
+     */
     isEqual(v, tolerance=0.001){
         // Check if this vector is equal to another vector
         return Math.abs(v.x - this.#x) <= tolerance && Math.abs(v.y - this.#y) <= tolerance;
     }
 
+    /**
+     * 
+     * @param {Number} scalar 
+     * @returns {Vec2} This vector after scaling
+     * @memberof Vec2
+     * @description Scale this vector by a scalar value
+     */
     scale(scalar){
         // Scale this vector by a scalar value
         this.#x *= scalar;
@@ -216,7 +315,13 @@ class Vec2{
 
         return this;
     }
-
+    /**
+     * 
+     * @param {Number} scalar The scalar value to divide this vector by
+     * @returns {Vec2} This vector after division
+     * @memberof Vec2
+     * @description Divide this vector by a scalar value
+     */
     divide(scalar){
         // Divide this vector by a scalar value
         this.#x /= scalar;
@@ -224,7 +329,13 @@ class Vec2{
 
         return this;
     }
-
+    
+    /**
+     * 
+     * @returns {Number} The magnitude of this vector
+     * @memberof Vec2
+     * @description Calculate the magnitude of this vector
+     */
     normalize(){
         // Normalize this vector
         const mag = this.#mag;
@@ -234,6 +345,13 @@ class Vec2{
         return this;
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to calculate the dot product with 
+     * @returns {Number} The dot product of this vector and another vector
+     * @memberof Vec2
+     * @description Calculate the dot product of this vector and another vector
+     */
     dot(v){
         // Dot product of this vector and another vector
         // Returns the projection of this vector onto the other vector
@@ -245,23 +363,49 @@ class Vec2{
         return result;
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to calculate the cross product with 
+     * @returns {Number} The cross product of this vector and another vector
+     * @memberof Vec2
+     * @description Calculate the cross product of this vector and another vector
+     */
     cross(v){
         // Cross product of this vector and another vector
         return this.#x*v.y - this.#y*v.x;
     }
 
+    /**
+     * 
+     * @param {Vec2} v The vector to find the midpoint betwee 
+     * @returns {Vec2} The midpoint between this vector and another vector
+     * @memberof Vec2
+     * @description Calculate the midpoint between this vector and another vector
+     */
     midpoint(v){
         // Calculate the midpoint between this vector and another vector
         const valueToAddToStartVector = Vec2.add(this.clone().scale(-1), v).scale(0.5);
         return Vec2.add(this, valueToAddToStartVector);
     }
 
+    /**
+     * 
+     * @returns {Vec2} A clone/copy of this vector
+     * @memberof Vec2
+     * @description Create a clone/copy of this vector
+     */
     clone(){
         // Clone this vector and return the new vector
         return new Vec2(this.#x, this.#y);
     }
 
-
+    /**
+     * 
+     * @param {Number} [precision=2] The number of decimal places to round the values to 
+     * @returns {Object} The serialized version of this vector
+     * @memberof Vec2
+     * @description Serialize this vector to a object with a a specified number of decimal places for the x and y values
+     */
     serialize(precision=2){
         // Serialize this vector
         const x = Number(this.#x.toFixed(precision)); // Round the x value to the specified precision
@@ -1348,6 +1492,11 @@ class GPUDynamicTree{
     }
 }
 
+/**
+ * @class
+ * @classdesc A Physics Engine class to handle physics simulations
+ * @param {number} maxTimeStep - The maximum time step for the physics engine in milliseconds
+ */
 class PhysicsEngine{
     #maxTimeStep; //Maximum time step for the physics engine in milliseconds
     constructor(maxTimeStep=50){
@@ -1357,6 +1506,13 @@ class PhysicsEngine{
         this.currentlyColliding = [];
     }
 
+    /**
+     * @param {Number} dt The delta time of the game in seconds (note different units from the maxTimeStep property) 
+     * @description Steps the simulation of the physics engine
+     * @returns {void}
+     * @method
+     * @public 
+     */
     stepSimulation(dt){
         this.currentlyColliding = [];
         dt = Math.min(dt, this.#maxTimeStep/1000); // Clamp the delta time to the maximum time step
@@ -1368,6 +1524,13 @@ class PhysicsEngine{
         this.#checkAllCollisions();
     }
 
+    /**
+     * @param {Rigidbody} rigidbody The rigidbody to add to the physics engine 
+     * @description Adds a rigidbody to the physics engine
+     * @returns {void}
+     * @method
+     * @public 
+     */
     addRigidbody(rigidbody){
         this.rigidBodies.push(rigidbody);
     }
