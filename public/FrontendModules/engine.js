@@ -5,6 +5,8 @@ import { PhysicsAPI, PhysicsModule } from "./physicsModule.js";
 import { EntityAPI, EntityModule } from "./entityModule.js";
 import { AssetAPI, AssetModule } from "./assetModule.js";
 import { ParticleAPI, ParticleModule } from "./particleModule.js";
+import  GameManager from "../gameManager.js"
+
 
 import { ModuleAPI, Module } from "./moduleBase.js";
 
@@ -113,6 +115,8 @@ export class Engine {
 
         this.api = new EngineAPI(context, canvas, this);
         this.loadModules();
+
+        this.gameManager = new GameManager(this.api);
     }
 
     async preload() {
@@ -123,6 +127,7 @@ export class Engine {
                     await this.modules[module].preload();
                 }
             }
+            await this.gameManager.Preload();
             resolve();
         });
     }
@@ -202,6 +207,8 @@ export class Engine {
 
         console.log("Engine started");
 
+        this.gameManager.Start();
+
         this.#lastUpdate = performance.now();
         this.update(0);
     }
@@ -231,6 +238,8 @@ export class Engine {
                 this.modules[module].update(dt);
             }
         }
+        
+        this.gameManager.Update(dt);
 
         requestAnimationFrame(() => this.update(dt));
     }
