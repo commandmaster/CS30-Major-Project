@@ -32,8 +32,12 @@ class Entity {
 
         //Check the data type of the serialized components to see the serialization format of the components is an array or an object
         (typeof this.serializedComponents === "object" ? Object.values(this.serializedComponents) : this.serializedComponents).forEach((component) => {
-            this.createComponent(component); // Create the component
+            this.createComponent(component, true); // Create the component
         });
+
+        if (!this.components.has("transform")) {
+            this.createComponent({type: "transform", position: new Vec2(0, 0), rotation: 0}); // Create a transform component if it does not exist
+        } 
     }
 
     #createTransformComponent(component, parentAPI) {
@@ -96,7 +100,7 @@ class Entity {
         this.components.set("scripting", scripting); // Add the scripting component to the components map
     }
 
-    createComponent(component) {
+    createComponent(component, isSerialized = false) {
         let parentAPI; // Parent module of the component - One of the core engine systems/modules (e.g. Physics, Graphics, etc.)
 
         if (component === null || component === undefined){
@@ -111,51 +115,92 @@ class Entity {
             throw new Error(`The Components type property is undefined!`);
         }
 
-
-        // Check the type of the component and create the component
-        switch (component.type.toLowerCase()) {
-            case "transform":
-                parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
-                this.#createTransformComponent(
-                    component,
-                    parentAPI,
-                );
-                break;
-            case "rigidbody":
-                parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
-                this.#createRigidbodyComponent(
-                    component,
-                    parentAPI,
-                );
-                break;
-            case "animatior":
-                parentAPI = this.engineAPI.getAPI('render'); // Get the render module
-                this.#createAnimatorComponent(
-                    component,
-                    parentAPI,
-                );
-                break;
-            case "spriterenderer":
-                parentAPI = this.engineAPI.getAPI('render'); // Get the render module
-                this.#createSpriteRendererComponent(
-                    component,
-                    parentAPI,
-                );
-                break;
-            case "scripting":
-                parentAPI = this.engineAPI.getAPI('scripting'); // Get the scripting module
-                this.#createScriptingComponent(
-                    component,
-                    parentAPI,
-                );
-                break;
-            default:
-                if (typeof component.type === "string" || component.type.toLowerCase() !== component.type) {
-                    throw new Error(`Component ${component.type} does not exist. Make sure the component type is a valid string and is LOWERCASE!`);
-                }
-                    
-                throw new Error(`Component ${component.type} does not exist or is not a valid component type!`);
+        if (isSerialized) {
+            // Check the type of the component and create the component
+            switch (component.type.toLowerCase()) {
+                case "transform":
+                    parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
+                    this.#createTransformComponent(
+                        component,
+                        parentAPI,
+                    );
+                    break;
+                case "rigidbody":
+                    parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
+                    this.#createRigidbodyComponent(
+                        component,
+                        parentAPI,
+                    );
+                    break;
+                case "animatior":
+                    parentAPI = this.engineAPI.getAPI('render'); // Get the render module
+                    this.#createAnimatorComponent(
+                        component,
+                        parentAPI,
+                    );
+                    break;
+                case "spriterenderer":
+                    parentAPI = this.engineAPI.getAPI('render'); // Get the render module
+                    this.#createSpriteRendererComponent(
+                        component,
+                        parentAPI,
+                    );
+                    break;
+                case "scripting":
+                    parentAPI = this.engineAPI.getAPI('scripting'); // Get the scripting module
+                    this.#createScriptingComponent(
+                        component,
+                        parentAPI,
+                    );
+                    break;
+                default:
+                    if (typeof component.type === "string" || component.type.toLowerCase() !== component.type) {
+                        throw new Error(`Component ${component.type} does not exist. Make sure the component type is a valid string and is LOWERCASE!`);
+                    }
+                        
+                    throw new Error(`Component ${component.type} does not exist or is not a valid component type!`);
+            }
         }
+
+        else {
+            console.log(component.type);
+            // Check the type of the component and create the component
+            switch (component.type.toLowerCase()) {
+                case "transform":
+                    parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
+                    this.components.set("transform", new PhysicsAPI.TransformComponent(this, parentAPI, component)); // Add the transform component to the components map
+                    break;
+                case "rigidbody":
+                    console.log(component)
+                    parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
+                    this.components.set("rigidbody", new PhysicsAPI.RigidbodyComponent(this, parentAPI, component)); // Add the rigidbody component to the components map
+                    break;
+                case "animator":
+                    parentAPI = this.engineAPI.getAPI('render'); // Get the render module
+                    this.components.set("animator", new RenderAPI.AnimatorComponent(this, parentAPI, component)); // Add the animator component to the components map
+                    break;
+                case "spriterenderer":
+                    parentAPI = this.engineAPI.getAPI('render'); // Get the render module
+                    this.components.set("spriteRenderer", new RenderAPI.SpriteRendererComponent(this, parentAPI, component)); // Add the sprite renderer component to the components map
+                    break;
+                case "scripting":
+                    parentAPI = this.engineAPI.getAPI('scripting'); // Get the scripting module
+                    this.components.set("scripting", new ScriptingAPI.ScriptingComponent(this, parentAPI, component)); // Add the scripting component to the components map
+                    break;
+                default:
+                    if (typeof component.type === "string" || component.type.toLowerCase() !== component.type) {
+                        throw new Error(`Component ${component.type} does not exist. Make sure the component type is a valid string and is LOWERCASE!`);
+                    }
+                        
+                    throw new Error(`Component ${component.type} does not exist or is not a valid component type!`);
+            }
+        }
+   }
+
+    update(dt) {
+        this.components.forEach((component) => {
+            component.update(dt);
+        });
     }
 
     toJson() {
@@ -190,5 +235,10 @@ export class EntityModule extends Module {
     constructor(engineAPI) {
         super(engineAPI);
     }
+
+    update(dt) {
+
+         }
+
 }
 

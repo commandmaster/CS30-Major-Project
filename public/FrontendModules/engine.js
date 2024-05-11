@@ -76,6 +76,7 @@ export class Level{
 
     update(dt){
         this.levelManager.Update(dt);
+        this.entities.forEach(entity => entity.update(dt));
     }
 
     end(){

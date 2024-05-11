@@ -1532,6 +1532,10 @@ class PhysicsEngine{
      * @public 
      */
     addRigidbody(rigidbody){
+        if (rigidbody instanceof Rigidbody === false) {
+            console.log(rigidbody);
+            throw new Error('The rigidbody must be an instance of a Rigidbody class it is a ' + rigidbody.constructor.name);
+        }
         this.rigidBodies.push(rigidbody);
     }
 

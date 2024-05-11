@@ -2,7 +2,7 @@ import { ModuleAPI, Module } from "./moduleBase.js";
 import { Component } from "./moduleBase.js";
 
 import * as Physics from "../SharedCode/physicsEngine.mjs";
-const { Vec2, RectangleCollider, CircleCollider, TriangleCollider, Rigidbody, PhysicsEngine } = Physics;
+const { Vec2, RectangleCollider, CircleCollider, TriangleCollider, ConvexCollider, Rigidbody, PhysicsEngine } = Physics;
 
 
 
@@ -21,17 +21,34 @@ export class TransformComponent extends Component{
 
 
 export class RigidbodyComponent extends Component{
-    constructor(entity, moduleAPI, {rigidBody, collider}){
+    constructor(entity, moduleAPI, {rigidBody}){
         super(entity, moduleAPI, {});
         this.rigidBody = rigidBody;
-        this.collider = collider;
+        const physicsEngine = moduleAPI.getModule('physics').physicsEngine;
+        physicsEngine.addRigidbody(rigidBody);
     }
 
     static fromJSON(entity, moduleAPI, jsonObject){
         const rigidBody = new Rigidbody(new Vec2(jsonObject.rigidBody.position.x, jsonObject.rigidBody.position.y), jsonObject.rigidBody.rotation, jsonObject.rigidBody.mass, jsonObject.rigidBody.restitution, jsonObject.rigidBody.colliders);
-        const collider = new CircleCollider(rigidBody, jsonObject.collider.position.x, jsonObject.collider.position.y, jsonObject.collider.restitution, jsonObject.collider.radius);
-        return new PhysicsComponent(entity, moduleAPI, {rigidBody, collider});
-    }
+        for (const colliderData of jsonObject.rigidBody.colliders){
+            rigidBody.addCollider(createCollider(colliderData));
+        }
+
+        function createCollider(colliderData){
+            switch(colliderData.type){
+                case 'circle':
+                    return new CircleCollider(rigidBody, colliderData.position.x, colliderData.position.y, colliderData.restitution, colliderData.radius);
+                case 'rectangle':
+                    return new RectangleCollider(rigidBody, colliderData.position.x, colliderData.position.y, colliderData.restitution, colliderData.width, colliderData.height);
+                case 'triangle':
+                    return new TriangleCollider(rigidBody, colliderData.position.x, colliderData.position.y, colliderData.restitution, colliderData.width, colliderData.height);
+                case 'convex':
+                    return new ConvexCollider(rigidBody, colliderData.position.x, colliderData.position.y, colliderData.restitution, colliderData.vertices);
+            }
+        }
+
+        return new RigidbodyComponent(entity, moduleAPI, {rigidBody});
+    } 
 }
 
 
@@ -47,7 +64,7 @@ export class PhysicsAPI extends ModuleAPI {
     static RigidbodyComponent = RigidbodyComponent;
 
     constructor(engineAPI, module) {
-        super(engineAPI, module);
+        super(engineAPI, module); 
     }
 }
 
