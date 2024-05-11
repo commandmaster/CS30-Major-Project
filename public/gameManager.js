@@ -1,3 +1,4 @@
+import { EntityAPI } from "./frontendModules/entityModule.js";
 export default class GameManager {
     constructor(engineAPI) {
         this.engineAPI = engineAPI;
@@ -13,7 +14,10 @@ export default class GameManager {
     }
 
     Start(){
-
+        const entityAPI = this.engineAPI.getAPI("entity");
+        const newEntity = new EntityAPI.Entity(entityAPI, "testEntity");
+        newEntity.createComponent({position: {x: 0, y: 0}, rotation: 0, type: "transform"});
+        console.log(newEntity);
     }
 
     Update(dt){

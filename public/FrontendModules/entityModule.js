@@ -13,11 +13,12 @@ import { Vec2 } from "../SharedCode/physicsEngine.mjs";
 
 class Entity {
     components = new Map(); // Map<componentName, component>
-    constructor(entityAPI, serializedComponents) {
+    constructor(entityAPI, name, serializedComponents = {}) {
         this.entityAPI = entityAPI; // EntityAPI used to acces module, and the engine
+        this.name = name; // Name of the entity
         this.serializedComponents = serializedComponents; // Serialized components to be created in jsonObject format
         this.entityModule = entityAPI.module; // EntityModule used to create components
-
+        this.engineAPI = entityAPI.engineAPI; // EngineAPI used to access the engine 
         this.#init(); // initialize the entity
         
     }
@@ -35,60 +36,60 @@ class Entity {
         });
     }
 
-    #createTransformComponent(component, parentModule) {
+    #createTransformComponent(component, parentAPI) {
         // Create a new transform component instance from the JSON data
         const transform = PhysicsAPI.TransformComponent.fromJSON(
             this,
+            parentAPI, 
             component,
-            parentModule, 
             this.entityAPI.engineAPI
         );
 
         this.components.set("transform", transform); // Add the transform component to the components map
     }
 
-    #createRigidbodyComponent(component, parentModule) {
+    #createRigidbodyComponent(component, parentAPI) {
         // Create a new rigidbody component instance from the JSON data
         const rigidbody = PhysicsAPI.RigidbodyComponent.fromJSON(
             this,
+            parentAPI,
             component,
-            parentModule,
             this.entityAPI.engineAPI
         );
 
         this.components.set("rigidbody", rigidbody); // Add the rigidbody component to the components map
     }
 
-    #createAnimatorComponent(component, parentModule) {
+    #createAnimatorComponent(component, parentAPI) {
         // Create a new animator component instance from the JSON data
         const animator = RenderAPI.AnimatorComponent.fromJSON(
             this,
+            parentAPI,
             component,
-            parentModule,
             this.entityAPI.engineAPI
         );
 
         this.components.set("animator", animator); // Add the animator component to the components map
     }
 
-    #createSpriteRendererComponent(component, parentModule) {
+    #createSpriteRendererComponent(component, parentAPI) {
         // Create a new sprite renderer component instance from the JSON data
         const spriteRenderer = RenderAPI.SpriteRendererComponent.fromJSON(
             this,
+            parentAPI,
             component,
-            parentModule,
             this.entityAPI.engineAPI
         );
 
         this.components.set("spriteRenderer", spriteRenderer); // Add the sprite renderer component to the components map
     }
 
-    #createScriptingComponent(component, parentModule) {
+    #createScriptingComponent(component, parentAPI) {
         // Create a new scripting component instance from the JSON data
         const scripting = ScriptingAPI.ScriptingComponent.fromJSON(
             this,
+            parentAPI,
             component,
-            parentModule,
             this.entityAPI.engineAPI
         );
 
@@ -96,7 +97,7 @@ class Entity {
     }
 
     createComponent(component) {
-        let parentModule; // Parent module of the component - One of the core engine systems/modules (e.g. Physics, Graphics, etc.)
+        let parentAPI; // Parent module of the component - One of the core engine systems/modules (e.g. Physics, Graphics, etc.)
 
         if (component === null || component === undefined){
             throw new Error(`Component is ${typeof component}!`);
@@ -114,38 +115,38 @@ class Entity {
         // Check the type of the component and create the component
         switch (component.type.toLowerCase()) {
             case "transform":
-                parentModule = this.engineAPI.getModule('physics'); // Get the physics module
+                parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
                 this.#createTransformComponent(
                     component,
-                    parentModule,
+                    parentAPI,
                 );
                 break;
             case "rigidbody":
-                parentModule = this.engineAPI.getModule('physics'); // Get the physics module
+                parentAPI = this.engineAPI.getAPI('physics'); // Get the physics module
                 this.#createRigidbodyComponent(
                     component,
-                    parentModule,
+                    parentAPI,
                 );
                 break;
             case "animatior":
-                parentModule = this.engineAPI.getModule('render'); // Get the render module
+                parentAPI = this.engineAPI.getAPI('render'); // Get the render module
                 this.#createAnimatorComponent(
                     component,
-                    parentModule,
+                    parentAPI,
                 );
                 break;
             case "spriterenderer":
-                parentModule = this.engineAPI.getModule('render'); // Get the render module
+                parentAPI = this.engineAPI.getAPI('render'); // Get the render module
                 this.#createSpriteRendererComponent(
                     component,
-                    parentModule,
+                    parentAPI,
                 );
                 break;
             case "scripting":
-                parentModule = this.engineAPI.getModule('scripting'); // Get the scripting module
+                parentAPI = this.engineAPI.getAPI('scripting'); // Get the scripting module
                 this.#createScriptingComponent(
                     component,
-                    parentModule,
+                    parentAPI,
                 );
                 break;
             default:
