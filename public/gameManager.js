@@ -1,4 +1,5 @@
 import { EntityAPI } from "./frontendModules/entityModule.js";
+import { Level } from "./frontendModules/engine.js";
 import * as Physics from "./SharedCode/physicsEngine.mjs" 
 
 export default class GameManager {
@@ -24,8 +25,9 @@ export default class GameManager {
 
         newEntity.createComponent({rigidBody: rb, type: "rigidbody"});
         // newEntity.createComponent({position: {x: 0, y: 0}, rotation: 0, type: "transform"});
-        console.log(newEntity);
 
+        const testLevel = new Level(this.engineAPI, [newEntity], "testLevel");    
+        entityAPI.engine.loadLevel(testLevel);  
     }
 
     Update(dt){

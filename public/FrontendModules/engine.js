@@ -5,6 +5,7 @@ import { PhysicsAPI, PhysicsModule } from "./physicsModule.js";
 import { EntityAPI, EntityModule } from "./entityModule.js";
 import { AssetAPI, AssetModule } from "./assetModule.js";
 import { ParticleAPI, ParticleModule } from "./particleModule.js";
+import { ScriptingAPI, ScriptingModule } from "./scriptingModule.js";
 import  GameManager from "../gameManager.js"
 
 
@@ -30,6 +31,7 @@ export class EngineAPI {
         this.APIs.entity = new EntityAPI(this);
         this.APIs.asset = new AssetAPI(this);
         this.APIs.particle = new ParticleAPI(this);
+        this.APIs.scripting = new ScriptingAPI(this);
     }
 
     getAPI(module) {
@@ -65,7 +67,7 @@ export class Level{
         this.engineAPI = engineAPI;// Engine API
         this.entities = entities;// Entities in the level
         
-        const scriptingAPI = engineAPI.getAPI('scripting'); // Get the scripting API
+        const scriptingAPI = this.engineAPI.getAPI("scripting");
         this.levelManager = scriptingAPI.instantiateLevelManager(levelManagerName, this, this.engineAPI); // Instantiate the level manager
         this.levelManagerName = levelManagerName;
     }
@@ -75,6 +77,8 @@ export class Level{
     }
 
     update(dt){
+        console.log("Updating level");
+
         this.levelManager.Update(dt);
         this.entities.forEach(entity => entity.update(dt));
     }
@@ -118,6 +122,7 @@ export class Engine {
         this.loadModules();
 
         this.gameManager = new GameManager(this.api);
+        this.currentLevel = null;
     }
 
     async preload() {
@@ -141,11 +146,16 @@ export class Engine {
         this.modules.physics = new PhysicsModule(this.api);
         this.modules.entity = new EntityModule(this.api);
         this.modules.particle = new ParticleModule(this.api);
+        this.modules.scripting = new ScriptingModule(this.api);
     }
 
     async loadLevel(level) {
         function isAsync(func) {
             return typeof func.then === "function";
+        }
+        
+        if (this.currentLevel !== null) {
+            this.currentLevel.end();
         }
 
         for (let module in this.modules) {
@@ -183,6 +193,8 @@ export class Engine {
             }
         }
 
+        this.currentLevel = level;
+        this.currentLevel.start();
         this.start();
     }
 
@@ -239,8 +251,12 @@ export class Engine {
                 this.modules[module].update(dt);
             }
         }
-        
+
         this.gameManager.Update(dt);
+       
+        if(this.currentLevel !== null){
+            this.currentLevel.update(dt);
+        }
 
         requestAnimationFrame(() => this.update(dt));
     }

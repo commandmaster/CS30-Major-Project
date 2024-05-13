@@ -198,6 +198,7 @@ class Entity {
    }
 
     update(dt) {
+        //console.log("Updating entity...");
         this.components.forEach((component) => {
             component.update(dt);
         });

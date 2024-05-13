@@ -3,6 +3,7 @@ import { ModuleAPI, Module } from "./moduleBase.js";
 export class AssetAPI extends ModuleAPI {
     constructor(engineAPI) {
         super(engineAPI);
+        this.assetConfigPath = "/assets/assetConfig.json";
     }
 }
 
@@ -21,6 +22,7 @@ export class AssetModule extends Module {
         fetch(assetConfigPath)
             .then((response) => response.json())
             .then((json) => {
+                this.assetConfig = json;
                 for (let asset of json) {
                     this.#loadAsset(asset.type, asset.path).then((asset) => {
                         this.#pathToNameMap.set(asset.path, asset.name);

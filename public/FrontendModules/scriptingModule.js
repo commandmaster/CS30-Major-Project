@@ -70,16 +70,28 @@ export class ScriptingAPI extends ModuleAPI {
     constructor(engineAPI) {
         super(engineAPI);
     }
+
+    instantiateLevelManager(levelManagerName, level, engineAPI){
+    
+    }
+
+
 }
 
 export class ScriptingModule extends Module {
     constructor(engineAPI) {
         super(engineAPI);
+
+        this.levelManagerClasses = {};
     }
 
-    preload() {
+    async preload() {
         // Load scripts
-        
+        const scripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script");
+        for (const script of scripts) {
+            const scriptClass = await this.loadScript(script.path);
+            this.levelManagerClasses[script.name] = scriptClass;
+        }
     }
 
     
