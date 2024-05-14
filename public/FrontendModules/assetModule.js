@@ -43,8 +43,17 @@ export class AssetModule extends Module {
                 return this.#loadAudio(path);
             case "json":
                 return this.#loadJSON(path);
+            case "script":
+                return new Promise((resolve, reject) => {
+                  resolve();
+                });
+                // will be handeled by the scripting module
             default:
-                throw new Error(`Asset type ${assetType} not supported.`);
+                return new Promise((resolve, reject) => {
+                    resolve();
+                });
+
+                console.warn(`Asset type '${assetType}' not supported in asset module`);
         }
     }
 

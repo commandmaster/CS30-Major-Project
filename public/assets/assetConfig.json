@@ -3,5 +3,11 @@
         "type": "image",
         "path": "assets/spriteSheets/playerAnims.png",
         "name": "playerAnims"
+    },
+    {
+        "name": "testLevel",
+        "type": "script",
+        "subType": "levelManager",
+        "path": "/assets/scripts/levelScrips/TestingLevelManager.js"
     }
 ]

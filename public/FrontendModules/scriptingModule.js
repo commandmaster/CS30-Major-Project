@@ -10,9 +10,7 @@ class ScriptingComponent extends Component {
     }
 }
 
-class LevelManager{
 
-}
 
 class Monobehaviour{
     constructor(engineAPI, entity){
@@ -27,7 +25,7 @@ class Monobehaviour{
     }
 
     update(){
-
+        
     }
 
     instantiate(serializedEntity, position, rotation, velocity=Vec2.zero){
@@ -53,7 +51,6 @@ class Monobehaviour{
 
 export class ScriptingAPI extends ModuleAPI {
     static ScriptingComponent = ScriptingComponent;
-    static LevelManager = LevelManager;
     static Monobehaviour = Monobehaviour;
 
     static async loadScript(scriptPath) {
@@ -72,7 +69,8 @@ export class ScriptingAPI extends ModuleAPI {
     }
 
     instantiateLevelManager(levelManagerName, level, engineAPI){
-    
+        if (!this.levelManagerClasses[levelManagerName]) throw new Error(`LevelManager ${levelManagerName} not found`);
+        return new this.levelManagerClasses[levelManagerName](engineAPI, level);
     }
 
 
@@ -87,11 +85,26 @@ export class ScriptingModule extends Module {
 
     async preload() {
         // Load scripts
-        const scripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script");
-        for (const script of scripts) {
-            const scriptClass = await this.loadScript(script.path);
-            this.levelManagerClasses[script.name] = scriptClass;
-        }
+        return new Promise(async (resolve, reject) => {
+            function waitForCondition(condition) {
+                return new Promise((resolve) => {
+                    const intervalId = setInterval(() => {
+                    if (condition()) {
+                        clearInterval(intervalId);
+                        resolve();
+                    }
+                    }, 20);
+                });
+            }
+            
+            await waitForCondition(() => this.engineAPI.getModule("asset").assetConfig !== undefined);
+            const scripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script" && asset.subType === "levelManager");
+            for (const script of scripts) {
+                const scriptClass = await this.loadScript(script.path);
+                this.levelManagerClasses[script.name] = scriptClass;
+            }
+            resolve();
+        });
     }
 
     
