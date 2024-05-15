@@ -195,7 +195,6 @@ export class Engine {
 
         this.currentLevel = level;
         this.currentLevel.start();
-        this.start();
     }
 
     start() {

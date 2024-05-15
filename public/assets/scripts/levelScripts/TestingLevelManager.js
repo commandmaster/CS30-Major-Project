@@ -1,4 +1,4 @@
-import { ScriptingAPI } from "../../FrontendModules/scriptingModule.js";
+import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.js";
 
 export default class TestingLevelManager extends ScriptingAPI.LevelManager {
     constructor(engineAPI, level) {

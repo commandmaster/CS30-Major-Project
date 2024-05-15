@@ -49,14 +49,35 @@ class Monobehaviour{
     
 }
 
+class LevelManager {
+    constructor(engineAPI, level){
+        this.engineAPI = engineAPI;
+        this.level = level;
+    }
+
+    Start(){
+
+    }
+
+    Update(dt){
+        
+    }
+
+    End(){
+
+    }
+
+}
+
 export class ScriptingAPI extends ModuleAPI {
     static ScriptingComponent = ScriptingComponent;
     static Monobehaviour = Monobehaviour;
+    static LevelManager = LevelManager;
 
     static async loadScript(scriptPath) {
         return new Promise((resolve, reject) => {
             import(scriptPath).then((script) => {
-                resolve(script);
+                resolve(script.default);
             }).catch((error) => {
                 console.error(`Error loading script: ${scriptPath}`);
                 reject(error);
@@ -69,8 +90,9 @@ export class ScriptingAPI extends ModuleAPI {
     }
 
     instantiateLevelManager(levelManagerName, level, engineAPI){
-        if (!this.levelManagerClasses[levelManagerName]) throw new Error(`LevelManager ${levelManagerName} not found`);
-        return new this.levelManagerClasses[levelManagerName](engineAPI, level);
+        const levelManagerClasses = this.engineAPI.getModule("scripting").levelManagerClasses;
+        if (!levelManagerClasses[levelManagerName]) throw new Error(`LevelManager ${levelManagerName} not found`);
+        return new levelManagerClasses[levelManagerName](engineAPI, level);
     }
 
 
@@ -100,7 +122,7 @@ export class ScriptingModule extends Module {
             await waitForCondition(() => this.engineAPI.getModule("asset").assetConfig !== undefined);
             const scripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script" && asset.subType === "levelManager");
             for (const script of scripts) {
-                const scriptClass = await this.loadScript(script.path);
+                const scriptClass = await ScriptingAPI.loadScript(script.path);
                 this.levelManagerClasses[script.name] = scriptClass;
             }
             resolve();

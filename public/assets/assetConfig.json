@@ -8,6 +8,6 @@
         "name": "testLevel",
         "type": "script",
         "subType": "levelManager",
-        "path": "/assets/scripts/levelScrips/TestingLevelManager.js"
+        "path": "/assets/scripts/levelScripts/TestingLevelManager.js"
     }
 ]

@@ -24,6 +24,9 @@ export class AssetModule extends Module {
             .then((json) => {
                 this.assetConfig = json;
                 for (let asset of json) {
+                    if (asset.type === "script") {
+                        continue;
+                    }
                     this.#loadAsset(asset.type, asset.path).then((asset) => {
                         this.#pathToNameMap.set(asset.path, asset.name);
                     });
