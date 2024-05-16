@@ -72,6 +72,10 @@ export class Level{
         this.levelManagerName = levelManagerName;
     }
 
+    addEntity(entity){
+        this.entities.push(entity);
+    }
+
     start(){
         this.levelManager.Start();
     }

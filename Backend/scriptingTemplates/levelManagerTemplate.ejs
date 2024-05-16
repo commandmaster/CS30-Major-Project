@@ -1,4 +1,8 @@
 import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.js";
+import { EntityAPI } from "../../../FrontendModules/entityModule.js";
+import { PhysicsAPI } from "../../../frontendModules/physicsModule.js";
+import * as Physics from "../../../SharedCode/physicsEngine.mjs";
+
 
 export default class <%= className %> extends ScriptingAPI.LevelManager {
     constructor(engineAPI, level) {
