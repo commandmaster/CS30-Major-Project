@@ -74,10 +74,14 @@ export class Level{
 
     addEntity(entity){
         this.entities.push(entity);
+        entity.start();
     }
 
     start(){
         this.levelManager.Start();
+        for(let entity of this.entities){
+            entity.start();
+        }
     }
 
     update(dt){

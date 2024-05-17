@@ -22,6 +22,8 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const collider = new Physics.CircleCollider(rb, 0, 0, 1, 10);
         rb.addCollider(collider);
 
+        const scriptingComponent = new ScriptingAPI.ScriptingComponent(newEntity, this.engineAPI, ["Movement"]);
+
         newEntity.createComponent({rigidBody: rb, type: "rigidbody"});
         // newEntity.createComponent({position: {x: 0, y: 0}, rotation: 0, type: "transform"});
 

@@ -1,3 +1,5 @@
+    // Run the command node createScript.js 'Name' 'Type (entity or level)'
+
 let scriptName = process.argv[2];
 let scriptType = process.argv[3];
 

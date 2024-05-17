@@ -3,10 +3,43 @@ import { Component } from "./moduleBase.js";
 import { EntityAPI } from "./entityModule.js";
 import { Vec2 } from "../SharedCode/physicsEngine.mjs";
 
+// Import everything so the scripts can use them as static mehtods of the scripting api class
+// Namespace them so they can be accessed, Ex. ScriptingAPI.Physics, ScriptingAPI.Asset, etc.
+import * as Physics from "../SharedCode/physicsEngine.mjs";
+import * as Asset from "../FrontendModules/assetModule.js";
+import * as Entity from "../FrontendModules/entityModule.js";
+import * as Particle from "../FrontendModules/particleModule.js";
+import * as Input from "../FrontendModules/inputModule.js";
+import * as Render from "../FrontendModules/renderModule.js";
+import * as Networking from "../FrontendModules/networkingModule.js";
+import * as Particle from "../FrontendModules/particleModule.js";
+import * as Audio from "../FrontendModules/audioModule.js";
+
+
 
 class ScriptingComponent extends Component {
-    constructor(entity, parentModule, engineAPI, componentConfig) {
+    constructor(entity, moduleAPI, scriptNames) {
         super(entity, parentModule, engineAPI, componentConfig);
+        this.scriptNames = scriptNames;
+
+        this.scripts = new Map();
+
+        const scriptingAPI = this.engineAPI.getAPI("scripting"); // Get the scripting API
+        for (const scriptName of scriptNames) {
+            this.scripts.set(scriptName, scriptingAPI.instantiateEntityScript(entity, scriptName));
+        }
+    }
+
+    start(){
+        for (const script of this.scripts.values()) {
+            script.Start();
+        }
+    }
+
+    update(){
+        for (const script of this.scripts.values()) {
+            script.Update();
+        }
     }
 }
 
@@ -74,6 +107,16 @@ export class ScriptingAPI extends ModuleAPI {
     static Monobehaviour = Monobehaviour;
     static LevelManager = LevelManager;
 
+    static Physics = Physics;
+    static Asset = Asset;
+    static Entity = Entity;
+    static Particle = Particle;
+    static Input = Input;
+    static Render = Render;
+    static Networking = Networking;
+    static Particle = Particle;
+    static Audio = Audio;
+
     static async loadScript(scriptPath) {
         return new Promise((resolve, reject) => {
             import(scriptPath).then((script) => {
@@ -95,6 +138,12 @@ export class ScriptingAPI extends ModuleAPI {
         return new levelManagerClasses[levelManagerName](engineAPI, level);
     }
 
+    instantiateEntityScript(entity, scriptName){
+        const entityClasses = this.engineAPI.getModule("scripting").entityClasses;
+        if (!entityClasses[scriptName]) throw new Error(`Entity script ${scriptName} not found`);
+        return new entityClasses[scriptName](this.engineAPI, entity);
+    }
+
 
 }
 
@@ -103,6 +152,7 @@ export class ScriptingModule extends Module {
         super(engineAPI);
 
         this.levelManagerClasses = {};
+        this.entityClasses = {};
     }
 
     async preload() {
@@ -125,6 +175,13 @@ export class ScriptingModule extends Module {
                 const scriptClass = await ScriptingAPI.loadScript(script.path);
                 this.levelManagerClasses[script.name] = scriptClass;
             }
+
+            const entityScripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script" && asset.subType === "entity");
+            for (const script of entityScripts) {
+                const scriptClass = await ScriptingAPI.loadScript(script.path);
+                this.entityClasses[script.name] = scriptClass;
+            }
+
             resolve();
         });
     }

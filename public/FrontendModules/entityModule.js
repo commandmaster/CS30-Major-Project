@@ -197,6 +197,13 @@ class Entity {
         }
    }
 
+   start() {
+        //console.log("Starting entity...");
+        this.components.forEach((component) => {
+            component.start();
+        });
+    }
+
     update(dt) {
         //console.log("Updating entity...");
         this.components.forEach((component) => {
@@ -239,7 +246,7 @@ export class EntityModule extends Module {
 
     update(dt) {
 
-         }
+    }
 
 }
 
