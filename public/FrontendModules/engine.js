@@ -66,6 +66,8 @@ export class Level{
     constructor(engineAPI, entities, levelManagerName){
         this.engineAPI = engineAPI;// Engine API
         this.entities = entities;// Entities in the level
+
+        this.alreadyStarted = new Set(); // Set of entities that have already been started
         
         const scriptingAPI = this.engineAPI.getAPI("scripting");
         this.levelManager = scriptingAPI.instantiateLevelManager(levelManagerName, this, this.engineAPI); // Instantiate the level manager
@@ -74,19 +76,24 @@ export class Level{
 
     addEntity(entity){
         this.entities.push(entity);
+
+        if (this.alreadyStarted.has(entity)) return;
         entity.start();
+
+        this.alreadyStarted.add(entity);
     }
 
     start(){
         this.levelManager.Start();
         for(let entity of this.entities){
+            if (this.alreadyStarted.has(entity)) continue;
             entity.start();
+
+            this.alreadyStarted.add(entity);
         }
     }
 
     update(dt){
-        console.log("Updating level");
-
         this.levelManager.Update(dt);
         this.entities.forEach(entity => entity.update(dt));
     }
@@ -134,7 +141,7 @@ export class Engine {
     }
 
     async preload() {
-        console.log("Preloading engine");
+        
         return new Promise(async (resolve, reject) => {
             for (let module in this.modules) {
                 if (typeof this.modules[module].preload === "function") {
@@ -225,7 +232,7 @@ export class Engine {
             }
         }
 
-        console.log("Engine started");
+        
 
         this.gameManager.Start();
 

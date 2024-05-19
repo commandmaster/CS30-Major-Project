@@ -9,5 +9,11 @@
         "type": "script",
         "subType": "levelManager",
         "path": "/assets/scripts/levelScripts/TestingLevelManager.js"
+    },
+    {
+        "name": "Movement",
+        "type": "script",
+        "path": "/assets/scripts/entityScripts/Movement.js",
+        "subType": "entity"
     }
 ]

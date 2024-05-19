@@ -21,11 +21,12 @@ export class TransformComponent extends Component{
 
 
 export class RigidbodyComponent extends Component{
-    constructor(entity, moduleAPI, {rigidBody}){
-        super(entity, moduleAPI, {});
-        this.rigidBody = rigidBody;
-        const physicsEngine = moduleAPI.getModule('physics').physicsEngine;
-        physicsEngine.addRigidbody(rigidBody);
+    constructor(entity, parentModule, engineAPI, componentConfig){
+        super(entity, parentModule, engineAPI, componentConfig);
+
+        this.rigidBody = componentConfig.rigidBody;
+        const physicsEngine = this.parentModule.physicsEngine;
+        physicsEngine.addRigidbody(this.rigidBody);
     }
 
     static fromJSON(entity, moduleAPI, jsonObject){

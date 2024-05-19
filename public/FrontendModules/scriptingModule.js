@@ -12,20 +12,22 @@ import * as Particle from "../FrontendModules/particleModule.js";
 import * as Input from "../FrontendModules/inputModule.js";
 import * as Render from "../FrontendModules/renderModule.js";
 import * as Networking from "../FrontendModules/networkingModule.js";
-import * as Particle from "../FrontendModules/particleModule.js";
 import * as Audio from "../FrontendModules/audioModule.js";
 
 
 
 class ScriptingComponent extends Component {
-    constructor(entity, moduleAPI, scriptNames) {
+    constructor(entity, parentModule, engineAPI, componentConfig) {
         super(entity, parentModule, engineAPI, componentConfig);
-        this.scriptNames = scriptNames;
+
+        
+        this.scriptNames = componentConfig.scriptNames;
 
         this.scripts = new Map();
 
+        
         const scriptingAPI = this.engineAPI.getAPI("scripting"); // Get the scripting API
-        for (const scriptName of scriptNames) {
+        for (const scriptName of componentConfig.scriptNames) {
             this.scripts.set(scriptName, scriptingAPI.instantiateEntityScript(entity, scriptName));
         }
     }
@@ -49,7 +51,7 @@ class Monobehaviour{
     constructor(engineAPI, entity){
         this.engineAPI = engineAPI;
         this.entity = entity;
-        this.ScriptingAPI = engineAPI.getAPI("scripting");
+        this.scriptingAPI = engineAPI.getAPI("scripting");
        
     }
 
@@ -114,7 +116,6 @@ export class ScriptingAPI extends ModuleAPI {
     static Input = Input;
     static Render = Render;
     static Networking = Networking;
-    static Particle = Particle;
     static Audio = Audio;
 
     static async loadScript(scriptPath) {
@@ -140,6 +141,7 @@ export class ScriptingAPI extends ModuleAPI {
 
     instantiateEntityScript(entity, scriptName){
         const entityClasses = this.engineAPI.getModule("scripting").entityClasses;
+        
         if (!entityClasses[scriptName]) throw new Error(`Entity script ${scriptName} not found`);
         return new entityClasses[scriptName](this.engineAPI, entity);
     }

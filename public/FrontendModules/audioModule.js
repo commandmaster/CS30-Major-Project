@@ -10,6 +10,6 @@ export class AudioAPI extends ModuleAPI {
 export class AudioModule extends Module {
     constructor(engineAPI) {
         super(engineAPI);
-        console.log(new Vec2(1, 1));
+        
     }
 }

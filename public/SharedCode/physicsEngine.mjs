@@ -1152,7 +1152,7 @@ class SAT{
             const projection1 = SAT.projectAxis(axis, collider1); // Project the first collider onto the axis
             const projection2 = SAT.projectAxis(axis, collider2); // Project the second collider onto the axis
 
-            //console.log(projection1, projection2)
+            //
 
            if (projection1.min > projection2.max || projection2.min > projection1.max){ 
                 return false; // Return false if there is no overlap
@@ -1533,7 +1533,7 @@ class PhysicsEngine{
      */
     addRigidbody(rigidbody){
         if (rigidbody instanceof Rigidbody === false) {
-            console.log(rigidbody);
+            
             throw new Error('The rigidbody must be an instance of a Rigidbody class it is a ' + rigidbody.constructor.name);
         }
         this.rigidBodies.push(rigidbody);

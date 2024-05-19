@@ -1,4 +1,4 @@
-console.log("Hello from index.js");
+
 
 import { Engine } from "./frontendModules/engine.js";
 
