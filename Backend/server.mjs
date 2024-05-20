@@ -1,10 +1,10 @@
 // Import code from node_modules to setup the web server
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
+import express from "express";
+import path from "path";
+import crypto from "crypto";
+import fs from "fs";
 
-// Used to create unique IDs
-const crypto = require("crypto");
+const __dirname = import.meta.dirname;
 
 const app = express();
 const port = 3000;
@@ -25,5 +25,13 @@ const server = app.listen(port, localIP, () => {
 });
 
 // Import socket.io and create a new instance of it using the created web server
-const socket = require("socket.io");
-const io = socket(server);
+import {Server} from "socket.io";
+const io = new Server(server);
+
+// Import the Engine
+import { Engine } from "./engine.mjs";
+
+
+const engine = new Engine(io);
+
+

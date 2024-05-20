@@ -1,9 +1,10 @@
-class NetworkManager {
+export class NetworkManager {
   constructor(engine, io) {
     this.engine = engine;
     this.io = io;
 
     this.io.on('connection', (socket) => {
+      console.log('a user connected');
       this.connect(socket);
       socket.on('disconnect', () => {
         this.disconnect(socket);
@@ -25,18 +26,20 @@ class NetworkManager {
     
   }
 
-
-  
+  update(dt) {
+    
+  }
 }
 
-class Client{
+
+export class Client{
     constructor(networkManager, socket){
         this.networkManager = networkManager;
         this.socket = socket;
     }
 }
 
-class Room{
+export class Room{
     constructor(networkManager, name){
         this.networkManager = networkManager;
         this.name = name;

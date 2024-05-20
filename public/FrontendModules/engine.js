@@ -6,6 +6,7 @@ import { EntityAPI, EntityModule } from "./entityModule.js";
 import { AssetAPI, AssetModule } from "./assetModule.js";
 import { ParticleAPI, ParticleModule } from "./particleModule.js";
 import { ScriptingAPI, ScriptingModule } from "./scriptingModule.js";
+import { NetworkingAPI, NetworkingModule  } from "./networkingModule.js";
 import  GameManager from "../gameManager.js"
 
 
@@ -32,6 +33,7 @@ export class EngineAPI {
         this.APIs.asset = new AssetAPI(this);
         this.APIs.particle = new ParticleAPI(this);
         this.APIs.scripting = new ScriptingAPI(this);
+        this.APIs.networking = new NetworkingAPI(this);
     }
 
     getAPI(module) {
@@ -141,7 +143,21 @@ export class Engine {
     }
 
     async preload() {
-        
+        const priorityMap = new Map();
+        priorityMap.set("asset", 0);
+        priorityMap.set("audio", 1);
+        priorityMap.set("input", 2);
+        priorityMap.set("physics", 3);
+        priorityMap.set("entity", 4);
+        priorityMap.set("particle", 5);
+        priorityMap.set("render", 6);
+        priorityMap.set("scripting", 7);
+        priorityMap.set("networking", 8);
+
+        this.sortedModules = Object.keys(this.modules).sort(
+            (a, b) => priorityMap.get(a) - priorityMap.get(b)
+        );
+
         return new Promise(async (resolve, reject) => {
             for (let module in this.modules) {
                 if (typeof this.modules[module].preload === "function") {
@@ -162,6 +178,7 @@ export class Engine {
         this.modules.entity = new EntityModule(this.api);
         this.modules.particle = new ParticleModule(this.api);
         this.modules.scripting = new ScriptingModule(this.api);
+        this.modules.networking = new NetworkingModule(this.api); 
     }
 
     async loadLevel(level) {
@@ -213,20 +230,7 @@ export class Engine {
     }
 
     start() {
-        const priorityMap = new Map();
-        priorityMap.set("asset", 0);
-        priorityMap.set("audio", 1);
-        priorityMap.set("input", 2);
-        priorityMap.set("physics", 3);
-        priorityMap.set("entity", 4);
-        priorityMap.set("particle", 5);
-        priorityMap.set("render", 6);
-
-        const sortedModules = Object.keys(this.modules).sort(
-            (a, b) => priorityMap.get(a) - priorityMap.get(b)
-        );
-
-        for (let module of sortedModules) {
+        for (let module of this.sortedModules) {
             if (typeof this.modules[module].start === "function") {
                 this.modules[module].start();
             }
@@ -241,26 +245,13 @@ export class Engine {
     }
 
     update() {
-        const priorityMap = new Map();
-        priorityMap.set("asset", 0);
-        priorityMap.set("audio", 1);
-        priorityMap.set("input", 2);
-        priorityMap.set("physics", 3);
-        priorityMap.set("entity", 4);
-        priorityMap.set("particle", 5);
-        priorityMap.set("render", 6);
-
-        const sortedModules = Object.keys(this.modules).sort(
-            (a, b) => priorityMap.get(a) - priorityMap.get(b)
-        );
-
         const gameSpeed = 1;
         let dt = performance.now() - this.#lastUpdate;
         dt /= 1000;
         dt *= gameSpeed;
         this.#lastUpdate = performance.now();
 
-        for (let module of sortedModules) {
+        for (let module of this.sortedModules) {
             if (typeof this.modules[module].update === "function") {
                 this.modules[module].update(dt);
             }

@@ -7,14 +7,14 @@ const { Vec2, RectangleCollider, CircleCollider, TriangleCollider, ConvexCollide
 
 
 export class TransformComponent extends Component{
-    constructor(entity, moduleAPI, {position, rotation}){
-        super(entity, moduleAPI, {});
-        this.position = position;
-        this.rotation = rotation;
+    constructor(entity, parentModule, engineAPI, componentConfig){
+        super(entity, parentModule, engineAPI, componentConfig);
+        this.position = componentConfig.position;
+        this.rotation = componentConfig.rotation;
     }
 
-    static fromJSON(entity, moduleAPI, jsonObject){
-        return new TransformComponent(entity, moduleAPI, {position: new Vec2(jsonObject.position.x, jsonObject.position.y), rotation: jsonObject.rotation});
+    static fromJSON(entity, parentModule, engineAPI, jsonObject){
+        return new TransformComponent(entity, parentModule, engineAPI, jsonObject);
     }
 }
 
@@ -27,6 +27,21 @@ export class RigidbodyComponent extends Component{
         this.rigidBody = componentConfig.rigidBody;
         const physicsEngine = this.parentModule.physicsEngine;
         physicsEngine.addRigidbody(this.rigidBody);
+
+        const transformComponent = entity.getComponent('transform');
+        if (transformComponent !== undefined && transformComponent !== null && transformComponent instanceof TransformComponent){
+            transformComponent.position = this.rigidBody.position;
+            transformComponent.rotation = this.rigidBody.rotation;
+        }
+        else {
+            throw new Error(`
+            The Rigidbody Component requires a 'TransformComponent' to be attached to the entity.
+            This should not happen, check the entity creation code.`);
+        }
+    }
+
+    update(){
+        
     }
 
     static fromJSON(entity, moduleAPI, jsonObject){

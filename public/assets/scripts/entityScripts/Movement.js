@@ -1,4 +1,5 @@
 import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.js";
+const Physics = ScriptingAPI.Physics;
 
 
 export default class Movement extends ScriptingAPI.Monobehaviour {
@@ -7,11 +8,15 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
     }
 
     Start() {
-        console.log(this.entity)
+        
     }
 
     Update() {
-       
+        const inputAPI = this.engineAPI.getAPI("input");
+        const rigidbody = this.entity.getComponent("rigidbody");
+    
+        this.entity.getComponent("rigidbody").rigidBody.applyImpulse(new Physics.Vec2(inputAPI.getInputDown("horizontal") * 1000, inputAPI.getInputDown("vertical") * 1000));
+
     }
 }
 

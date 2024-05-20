@@ -17,7 +17,7 @@ class Entity {
         this.entityAPI = entityAPI; // EntityAPI used to acces module, and the engine
         this.name = name; // Name of the entity
         this.serializedComponents = serializedComponents; // Serialized components to be created in jsonObject format
-        this.entityModule = entityAPI.module; // EntityModule used to create components
+        this.entityModule = this.entityAPI.engineAPI.getModule("entity"); // EntityModule used to create components
         this.engineAPI = entityAPI.engineAPI; // EngineAPI used to access the engine 
         this.#init(); // initialize the entity
         
@@ -28,6 +28,11 @@ class Entity {
     }
 
     #initComponents() {
+        const physicsModule = this.engineAPI.getModule('physics'); // Get the physics module
+        const transform = new PhysicsAPI.TransformComponent(this, physicsModule, this.entityAPI.engineAPI, {position: new Vec2(0, 0), rotation: 0});
+        this.components.set("transform", transform); // Add the transform component to the components map
+
+
         if (typeof this.serializedComponents === "undefined") return; // If the serialized components is undefined, return out of the function
 
         //Check the data type of the serialized components to see the serialization format of the components is an array or an object
@@ -35,21 +40,7 @@ class Entity {
             this.createComponent(component, true); // Create the component
         });
 
-        if (!this.components.has("transform")) {
-            this.createComponent({type: "transform", position: new Vec2(0, 0), rotation: 0}); // Create a transform component if it does not exist
-        } 
-    }
-
-    #createTransformComponent(component, parentModule) {
-        // Create a new transform component instance from the JSON data
-        const transform = PhysicsAPI.TransformComponent.fromJSON(
-            this,
-            parentModule, 
-            component,
-            this.entityAPI.engineAPI
-        );
-
-        this.components.set("transform", transform); // Add the transform component to the components map
+        
     }
 
     #createRigidbodyComponent(component, parentModule) {
@@ -118,13 +109,6 @@ class Entity {
         if (isSerialized) {
             // Check the type of the component and create the component
             switch (component.type.toLowerCase()) {
-                case "transform":
-                    parentModule = this.engineAPI.getModule('physics'); // Get the physics module
-                    this.#createTransformComponent(
-                        component,
-                        parentModule,
-                    );
-                    break;
                 case "rigidbody":
                     parentModule = this.engineAPI.getModule('physics'); // Get the physics module
                     this.#createRigidbodyComponent(
@@ -157,23 +141,14 @@ class Entity {
                     if (typeof component.type === "string" || component.type.toLowerCase() !== component.type) {
                         throw new Error(`Component ${component.type} does not exist. Make sure the component type is a valid string and is LOWERCASE!`);
                     }
-                        
                     throw new Error(`Component ${component.type} does not exist or is not a valid component type!`);
             }
         }
 
         else {
-            
             // Check the type of the component and create the component
-
-            
             switch (component.type.toLowerCase()) {
-                case "transform":
-                    parentModule = this.engineAPI.getModule('physics'); // Get the physics module
-                    this.components.set("transform", new PhysicsAPI.TransformComponent(this, parentModule, this.entityAPI.engineAPI, component)); // Add the transform component to the components map
-                    break;
                 case "rigidbody":
-                    
                     parentModule = this.engineAPI.getModule('physics'); // Get the physics module
                     this.components.set("rigidbody", new PhysicsAPI.RigidbodyComponent(this, parentModule, this.entityAPI.engineAPI, component)); // Add the rigidbody component to the components map
                     break;
@@ -198,6 +173,10 @@ class Entity {
             }
         }
    }
+
+    getComponent(componentName) {
+         return this.components.get(componentName);
+    }
 
    start() {
         //

@@ -462,7 +462,7 @@ class Vec2{
     set x(value){
         this.#x = value;
         this.mag = this.#calculateMag();
-        this.normalized = this.#calculateNormalized();
+        this.#normalized = this.#calculateNormalized();
     }
 
     set y(value){
@@ -757,6 +757,22 @@ class Rigidbody{
         this.#actingForces.push(Vec2.scale(force, scalar)); // Add the force to the acting forces array
     }
 
+    applyImpulse(impulse, scalar=1, shouldNormalizeImpulseVector=false){
+        // Apply an impulse to the rigidbody
+        // Impulse is a force applied over a period of time and results in a change in momentum (mass * velocity)
+        // It is also the change in momentum of an object when a force is applied to it
+        // Impulse = force * deltaTime
+        // Impulse = m1 * v2 - m1 * v1
+
+        if (shouldNormalizeImpulseVector) impulse = Vec2.normalize(impulse); // Normalize the impulse vector if it should be normalized
+
+        impulse = Vec2.scale(impulse, scalar); // Scale the impulse by the scalar value
+
+        // Calculate the velocity of the rigidbody after the impulse
+        const velocityAfterImpulse = Vec2.add(this.#velocity, Vec2.scale(impulse, 1 / this.#mass));
+
+        this.#velocity = velocityAfterImpulse; // Set the velocity of the rigidbody to the velocity after the impulse
+    }
 
     addCollider(collider){
         this.#colliders.push(collider);
