@@ -1,6 +1,8 @@
 import { NetworkManager } from "./network.mjs";
 import { PhysicsModule } from "./physics.mjs";
 
+import * as fs from "fs-extra";
+
 export class Engine {
     constructor(io) {
         this.modules = {};
@@ -34,5 +36,14 @@ export class Engine {
                 throw new Error(`Module ${module} does not have an update function`);
             }
         }
+    }
+}
+
+class ScriptLoader{
+    static getAssetConfig(){
+        return new Promise(async (resolve, reject) => {
+            const data = await fs.promises.readFile("/assets/assetConfig.json", "utf-8")
+            resolve(JSON.parse(data));
+        });
     }
 }

@@ -12,6 +12,7 @@ const port = 3000;
 // const localIP = '0.0.0.0'
 const localIP = "localhost"; // temporary fix for testing purposes
 
+console.log(__dirname);
 const publicPath = path.join(__dirname, "..", "public"); // Path to the public folder containing the client-side code
 
 

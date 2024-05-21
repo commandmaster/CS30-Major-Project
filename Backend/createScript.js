@@ -47,7 +47,7 @@ async function createTheScript(){
     const sourceTemplatePath = path.join(__dirname, 'scriptingTemplates', scriptTemplates.get(scriptType));  
     const templateContent = await fs.promises.readFile(sourceTemplatePath)
 
-    const scriptPath = path.join(destinationPath, scriptName + namingConvention.get(scriptType) + '.js');
+    const scriptPath = path.join(destinationPath, scriptName + namingConvention.get(scriptType) + '.mjs');
     const renderedTemplate = ejs.render(templateContent.toString(), {className: scriptName + namingConvention.get(scriptType)});
     await fs.promises.writeFile(scriptPath, renderedTemplate, 'utf8');
 

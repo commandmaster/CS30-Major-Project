@@ -8,12 +8,12 @@
         "name": "testLevel",
         "type": "script",
         "subType": "levelManager",
-        "path": "/assets/scripts/levelScripts/TestingLevelManager.js"
+        "path": "/assets/scripts/levelScripts/TestingLevelManager.mjs"
     },
     {
         "name": "Movement",
         "type": "script",
-        "path": "/assets/scripts/entityScripts/Movement.js",
+        "path": "/assets/scripts/entityScripts/Movement.mjs",
         "subType": "entity"
     }
 ]
