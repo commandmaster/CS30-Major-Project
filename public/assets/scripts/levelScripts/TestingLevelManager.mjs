@@ -53,3 +53,20 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
     }
 }
 
+export class Backend{
+    constructor(BE_engine){
+        this.engine = BE_engine; // the Backend engine ran by the server
+    }
+
+    preload(){
+            
+    }
+
+    start(){
+
+    }
+
+    update(){
+
+    }
+}
