@@ -8,8 +8,17 @@ export class PhysicsModule {
         this.physicsEngine = new Physics.PhysicsEngine();
     }
 
-    update(){
-        const dt = this.engine.dt;
+    start(){
+        
+    }
+
+    update(dt){
         this.physicsEngine.stepSimulation(dt);
+    }
+
+    createRigidBody({position, rotation, mass, bounce, colliders}){
+        const rb = new Physics.Rigidbody(position, rotation, mass, bounce, colliders);
+        this.physicsEngine.addRigidbody(rb);
+        return rb;
     }
 }

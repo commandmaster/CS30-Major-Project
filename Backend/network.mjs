@@ -11,20 +11,20 @@ export class NetworkManager {
       });
     }); 
 
-
-
-    this.rooms = [];
-
-
+    this.clients = {};
   }
 
   connect(socket) {
-    
+    this.clients[socket.id] = new Client(this, socket);
   }
 
   disconnect(socket) {
-    
+    delete this.clients[socket.id];
   }
+
+  start() {
+    
+  } 
 
   update(dt) {
     
@@ -32,25 +32,11 @@ export class NetworkManager {
 }
 
 
-export class Client{
+class Client{
     constructor(networkManager, socket){
         this.networkManager = networkManager;
         this.socket = socket;
     }
 }
 
-export class Room{
-    constructor(networkManager, name){
-        this.networkManager = networkManager;
-        this.name = name;
-        this.clients = [];
-    }
 
-    connect(client){
-        this.clients.push(client);
-    }
-
-    disconnect(client){
-        this.clients = this.clients.filter(c => c !== client);
-    }
-}

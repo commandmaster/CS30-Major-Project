@@ -3,6 +3,7 @@ import express from "express";
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
+import * as fsPromises from "fs/promises";
 
 const __dirname = import.meta.dirname;
 
@@ -36,3 +37,43 @@ import { Engine } from "./engine.mjs";
 const engine = new Engine(io);
 
 
+class Room{
+    constructor(name, engine){
+        this.name = name;
+        this.engine = engine;
+        this.clients = {};
+    }
+
+    addClient(client){
+        this.clients[client.id] = client;
+    }
+
+    removeClient(client){
+        delete this.clients[client.id];
+    }
+}
+
+class ServerHandler{
+    constructor(io){
+        this.io = io;
+        this.rooms = {}; // Create different rooms for multiple games/rooms on a single server
+
+        // Pull the server configuration from the serverConfig.json file
+        this.serverConfig = fsPromises.readFile(path.join(__dirname, "serverConfig.json"), "utf-8").then((config) => {
+            this.serverConfig = JSON.parse(config);
+            this.setupServer(this.serverConfig);
+        });
+    }
+
+    async setupServer(serverConfig){
+        this.io.on('connection', (socket) => {
+            console.log('a user connected');
+            this.connect(socket);
+            socket.on('disconnect', () => {
+                this.disconnect(socket);
+            });
+        });
+    }
+
+
+}
