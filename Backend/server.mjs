@@ -30,11 +30,11 @@ const server = app.listen(port, localIP, () => {
 import {Server} from "socket.io";
 const io = new Server(server);
 
-// Import the Engine
-import { Engine } from "./engine.mjs";
+// // Import the Engine
+// import { Engine } from "./engine.mjs";
 
 
-const engine = new Engine(io);
+// const engine = new Engine(io);
 
 
 class Room{
@@ -57,16 +57,52 @@ class ServerHandler{
     constructor(io){
         this.io = io;
         this.rooms = {}; // Create different rooms for multiple games/rooms on a single server
+        this.allowedToJoin = {};
 
         // Pull the server configuration from the serverConfig.json file
-        this.serverConfig = fsPromises.readFile(path.join(__dirname, "serverConfig.json"), "utf-8").then((config) => {
+        this.serverConfig = fsPromises.readFile(path.join("./serverConfig.json"), "utf-8").then((config) => {
             this.serverConfig = JSON.parse(config);
             this.setupServer(this.serverConfig);
         });
     }
 
     async setupServer(serverConfig){
+        const maxRoomSize = serverConfig.maxRoomSize;
+        const maxRooms = serverConfig.maxRooms;
+        const logs = serverConfig.logs;
+
         this.io.on('connection', (socket) => {
+            const totalUsers = this.io.engine.clientsCount;
+            console.log(`Total Users: ${totalUsers}`);
+
+            // Create a new room if the max number of rooms has not been reached and the previous room is full
+            if(Object.keys(this.rooms).length < maxRooms && totalUsers % maxRoomSize === 0){
+                const roomName = crypto.randomUUID();
+                this.rooms[roomName] = new Room(roomName);
+                socket.emit('joinRoom', roomName);
+            } else{
+                // Check if any rooms have space
+                let foundRoom = false;
+                for(const room in this.rooms){
+                    if(Object.keys(this.rooms[room].clients).length < maxRoomSize){
+                        socket.emit('joinRoom', room);
+                        foundRoom = true;
+                        break;
+                    }
+                }
+
+                // If no rooms have space, create a new room
+                if(!foundRoom){
+                    const roomName = crypto.randomUUID();
+                    this.rooms[roomName] = new Room(roomName);
+                    socket.emit('joinRoom', roomName);
+                }
+
+                this.allowedToJoin[socket.id] = {room: roomName, time: Date.now()};
+            }
+
+
+
             console.log('a user connected');
             this.connect(socket);
             socket.on('disconnect', () => {
@@ -75,5 +111,26 @@ class ServerHandler{
         });
     }
 
+    connect(socket){
+        socket.on('joinRoom', (roomName) => {
+            if(this.rooms[roomName]){
+                this.rooms[roomName].addClient(socket);
+            }else{
+                this.rooms[roomName] = new Room(roomName);
+                this.rooms[roomName].addClient(socket);
+            }
+        });
+    }
+
+    disconnect(socket){
+        for(const room in this.rooms){
+            if(this.rooms[room].clients[socket.id]){
+                this.rooms[room].removeClient(socket);
+            }
+        }
+    }
+
 
 }
+
+const serverHandler = new ServerHandler(io);
