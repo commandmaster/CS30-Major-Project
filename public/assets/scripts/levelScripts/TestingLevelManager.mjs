@@ -33,6 +33,25 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const networkingModule = this.engineAPI.getModule("networking");
         try {
             networkingModule.connectToServer().then((socket) => {
+                socket.emit('requestJoin');
+
+                socket.on('setSessionID', (sessionID) => {
+                    console.log(`Session ID: ${sessionID}`);
+                    sessionStorage.setItem('sessionID', sessionID);
+                });
+
+                socket.on('getSessionID', (socketID, callback) => {
+                    const sessionID = sessionStorage.getItem('sessionID');
+                    if (sessionID === null || sessionID === undefined) {
+                        callback(null);
+                    }
+                    
+                    callback(sessionID);
+                });
+
+                socket.on('joinedRoom', (roomName) => {
+                    console.log(`Joined Room: ${roomName}`);
+                });
                 console.log("Connected to server", 'Socket:', socket, 'ID:', socket.id);
             });
         }
