@@ -34,7 +34,7 @@ const io = new Server(server, {pingTimeout: 1000, pingInterval: 2000});
 import { Engine } from "./engine.mjs";
 
 
-// const engine = new Engine(io);
+
 
 
 class Room{
@@ -42,14 +42,17 @@ class Room{
         this.name = name;
         this.engine = engine;
         this.clients = {};
+        this.cashedClients = new Map(); // Store the clients that have left the room (their reconnection ids) 
     }
 
-    addClient(client){
-        this.clients[client.id] = client;
+    addClient(socket){
+        this.clients[socket.id] = socket;
+        this.cashedClients.delete(socket.id);
     }
 
-    removeClient(client){
-        delete this.clients[client.id];
+    removeClient(socket){
+        delete this.clients[socket.id];
+        this.cashedClients.set(socket.id, socket.id);
     }
 }
 
@@ -57,7 +60,6 @@ class ServerHandler{
     constructor(io){
         this.io = io;
         this.rooms = {}; // Create different rooms for multiple games/rooms on a single server
-        this.allowedToJoin = {};
 
         // Pull the server configuration from the serverConfig.json file
         this.serverConfig = fsPromises.readFile(path.join("./serverConfig.json"), "utf-8").then((config) => {
@@ -79,15 +81,24 @@ class ServerHandler{
     }
 
     async connect(socket){
-        const maxRooms = this.serverConfig.maxRooms;
-        const maxRoomSize = this.serverConfig.maxRoomSize;
-        const logs = this.serverConfig.logs;        
+        const maxRooms = this.serverConfig.maxRooms; // Maximum number of rooms that can be created
+        const maxRoomSize = this.serverConfig.maxRoomSize; // Maximum number of players that can join a room
+        const logs = this.serverConfig.logs;  // Boolean to determine if logs should be printed to the console
         
 
         
-        const totalUsers = this.io.engine.clientsCount;
+        const totalUsers = this.io.engine.clientsCount; // Get the total number of users connected to the server
         console.log(`Total Users: ${totalUsers}`);
 
+        /**
+         * Get the session ID of the user
+         * @typedef {Object} Socket - A socket.io object representing a connected client
+         * @param {Socket} socket - The socket of the user
+         * @returns {Promise} - The session ID of the user
+         * @async
+         * @function getSessionID
+         * @memberof ServerHandler
+        */
         function getSessionID(socket){
             console.log('Getting session ID');
             return new Promise((resolve, reject) => {
@@ -106,26 +117,38 @@ class ServerHandler{
 
 
         socket.on('requestJoin', async () => {
-            let sessionID = await getSessionID(socket);
+            let sessionID = await getSessionID(socket); // Get the session ID of the user
 
             console.log(`Session ID: ${sessionID}`);
             if (sessionID === null){
-                sessionID = crypto.randomUUID();
-                socket.emit('setSessionID', sessionID);
+                sessionID = crypto.randomUUID(); // Generate a new session ID if the user does not have one
+                socket.emit('setSessionID', sessionID); // Send the session ID to the user
             }
 
+            // try reconnecting the user to a room
+            for (const room in this.rooms){
+                if(this.rooms[room].cashedClients.has(socket.id)){
+                    this.rooms[room].addClient(socket);
+                    socket.emit('joinedRoom', room);
+                    return;
+                }
+            }
+            
             // Create a new room if the max number of rooms has not been reached and the previous room is full
             if(Object.keys(this.rooms).length < maxRooms && totalUsers % maxRoomSize === 0){
                 const roomName = crypto.randomUUID();
                 this.rooms[roomName] = new Room(roomName, new Engine(this.io));
                 socket.emit('joinedRoom', roomName);
+                this.rooms[roomName].addClient(socket);
             } else{
                 // Check if any rooms have space
                 let foundRoom = false;
-                for(const room in this.rooms){
-                    if(Object.keys(this.rooms[room].clients).length < maxRoomSize){
-                        socket.emit('joinedRoom', room);
-                        foundRoom = room;
+                for(const roomName in this.rooms){
+                    const room = this.rooms[roomName];
+                    if(Object.keys(room.clients).length + room.cashedClients.length < maxRoomSize){
+                        socket.emit('joinedRoom', roomName);
+                        room.addClient(socket);
+                        foundRoom = roomName;
                         break;
                     }
                 }
@@ -133,6 +156,7 @@ class ServerHandler{
                 if(!foundRoom){
                     const roomName = crypto.randomUUID();
                     this.rooms[roomName] = new Room(roomName, new Engine(this.io));
+                    this.rooms[roomName].addClient(socket);
                     socket.emit('joinedRoom', roomName);
                     foundRoom = roomName;
                 }
@@ -151,4 +175,4 @@ class ServerHandler{
 
 }
 
-const serverHandler = new ServerHandler(io);
+const serverHandler = new ServerHandler(io); // Create a new instance of the ServerHandler class all server-client game logic using socket.io
