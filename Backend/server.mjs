@@ -142,25 +142,25 @@ class ServerHandler{
                 this.rooms[roomName].addClient(socket);
             } else{
                 // Check if any rooms have space
-                let foundRoom = false;
+       
                 for(const roomName in this.rooms){
                     const room = this.rooms[roomName];
                     if(Object.keys(room.clients).length + room.cashedClients.length < maxRoomSize){
                         socket.emit('joinedRoom', roomName);
                         room.addClient(socket);
-                        foundRoom = roomName;
                         break;
                     }
                 }
-                // If no rooms have space, create a new room
-                if(!foundRoom){
-                    const roomName = crypto.randomUUID();
-                    this.rooms[roomName] = new Room(roomName, new Engine(this.io));
-                    this.rooms[roomName].addClient(socket);
-                    socket.emit('joinedRoom', roomName);
-                    foundRoom = roomName;
-                }
+
+
             }
+
+            const roomName = crypto.randomUUID();
+            this.rooms[roomName] = new Room(roomName, new Engine(this.io));
+            this.rooms[roomName].addClient(socket);
+            socket.emit('joinedRoom', roomName);
+            foundRoom = roomName;
+            console.log(`Created new room: ${roomName}`);
         });
     }
 
