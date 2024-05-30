@@ -3,5 +3,17 @@
         "type": "image",
         "path": "assets/spriteSheets/playerAnims.png",
         "name": "playerAnims"
+    },
+    {
+        "name": "testLevel",
+        "type": "script",
+        "subType": "levelManager",
+        "path": "/assets/scripts/levelScripts/TestingLevelManager.mjs"
+    },
+    {
+        "name": "Movement",
+        "type": "script",
+        "path": "/assets/scripts/entityScripts/Movement.mjs",
+        "subType": "entity"
     }
 ]
