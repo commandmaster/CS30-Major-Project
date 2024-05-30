@@ -38,19 +38,34 @@ import { Engine } from "./engine.mjs";
 
 
 class Room{
-    constructor(name, engine){
+    constructor(name, engine, host = null){
         this.name = name;
         this.engine = engine;
         this.clients = {};
+        this.host = host;
         this.cashedClients = new Map(); // Store the clients that have left the room (their reconnection ids) 
     }
 
-    addClient(socket){
+    addClient(socket, isHost = false){
         this.clients[socket.id] = socket;
+        
+        if (isHost){
+            this.host = socket;
+        }
+
         this.cashedClients.delete(socket.id);
     }
 
     removeClient(socket){
+        if (this.host === socket){
+            this.host = null;
+            for (const client in this.clients){
+                client.disconnect();
+            }
+        }
+
+        
+
         delete this.clients[socket.id];
         this.cashedClients.set(socket.id, socket.id);
     }
@@ -113,55 +128,37 @@ class ServerHandler{
             });
         }
 
-      
+        socket.on('hostGame', (roomName, callback) => {
+            roomName = roomName.trim();
 
-
-        socket.on('requestJoin', async () => {
-            let sessionID = await getSessionID(socket); // Get the session ID of the user
-
-            console.log(`Session ID: ${sessionID}`);
-            if (sessionID === null){
-                sessionID = crypto.randomUUID(); // Generate a new session ID if the user does not have one
-                socket.emit('setSessionID', sessionID); // Send the session ID to the user
-            }
-
-            // try reconnecting the user to a room
-            for (const room in this.rooms){
-                if(this.rooms[room].cashedClients.has(socket.id)){
-                    this.rooms[room].addClient(socket);
-                    socket.emit('joinedRoom', room);
-                    return;
-                }
-            }
+            const matchRegex = new RegExp(/[^a-zA-Z0-9_]/g);
             
-            // Create a new room if the max number of rooms has not been reached and the previous room is full
-            if(Object.keys(this.rooms).length < maxRooms && totalUsers % maxRoomSize === 0){
-                const roomName = crypto.randomUUID();
-                this.rooms[roomName] = new Room(roomName, new Engine(this.io));
-                socket.emit('joinedRoom', roomName);
-                this.rooms[roomName].addClient(socket);
-            } else{
-                // Check if any rooms have space
-       
-                for(const roomName in this.rooms){
-                    const room = this.rooms[roomName];
-                    if(Object.keys(room.clients).length + room.cashedClients.length < maxRoomSize){
-                        socket.emit('joinedRoom', roomName);
-                        room.addClient(socket);
-                        break;
-                    }
-                }
-
-
+            if (matchRegex.test(roomName)){
+                callback('Room name can only contain letters, numbers and underscores');
+                return;
             }
 
-            const roomName = crypto.randomUUID();
-            this.rooms[roomName] = new Room(roomName, new Engine(this.io));
-            this.rooms[roomName].addClient(socket);
+            if (this.rooms[roomName]){
+                callback('Room already exists');
+                return;
+            }
+
+            callback('Room created');
+            this.rooms[roomName] = new Room(roomName, new Engine(this.io), socket);
             socket.emit('joinedRoom', roomName);
-            foundRoom = roomName;
+            this.rooms[roomName].addClient(socket, true);
             console.log(`Created new room: ${roomName}`);
         });
+
+        socket.on('joinGame', (roomName) => {
+            if(this.rooms[roomName]){
+                this.rooms[roomName].addClient(socket, false);
+                socket.emit('joinedRoom', roomName);
+            } else{
+                socket.emit('roomNotFound');
+            }
+        });
+
     }
 
     disconnect(socket){
