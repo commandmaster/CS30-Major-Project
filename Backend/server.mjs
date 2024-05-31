@@ -59,8 +59,9 @@ class Room{
     removeClient(socket){
         if (this.host === socket){
             this.host = null;
-            for (const client in this.clients){
-                client.disconnect();
+            for (const clientID in this.clients){
+                this.clients[clientID].disconnect();
+                delete this.clients[clientID];
             }
         }
 
@@ -162,9 +163,15 @@ class ServerHandler{
     }
 
     disconnect(socket){
+        socket.off('disconnect', this.disconnect);
         for(const room in this.rooms){
             if(this.rooms[room].clients[socket.id]){
-                this.rooms[room].removeClient(socket);
+                if (this.rooms[room].host === socket){
+                    this.rooms[room].removeClient(socket);
+                    delete this.rooms[room];
+                } else{
+                    this.rooms[room].removeClient(socket);
+                }
             }
         }
     }

@@ -29,6 +29,10 @@ export class NetworkingModule extends Module {
             this.socket.on('connect', () => {
                 resolve(this.socket);
             });
+
+            this.socket.on('disconnect', () => {
+                location.reload();
+            });
         });
     }
 }

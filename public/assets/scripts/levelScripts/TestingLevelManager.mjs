@@ -36,13 +36,30 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                 function host(){
                     socket.emit('hostGame', 'testRoom', (callback) => {
                         console.log(callback);
-                        if (callback !== "Room created"){
-                            host();
-                        }
                     });
                 }
-                
-                host();
+
+                function join(){
+                    socket.emit('joinGame', 'testRoom');
+                }
+
+                const joinBtn = document.createElement('button');
+                joinBtn.innerText = 'Join Room';
+                joinBtn.style.position = 'absolute';
+                joinBtn.style.top = '0px';
+                joinBtn.onclick = join;
+
+                const hostBtn = document.createElement('button');
+                hostBtn.innerText = 'Host Room';
+                hostBtn.style.position = 'absolute';
+                hostBtn.style.top = '25px';
+
+                hostBtn.onclick = host;
+
+
+
+                document.body.appendChild(joinBtn); 
+                document.body.appendChild(hostBtn);
 
                 socket.on('setSessionID', (sessionID) => {
                     console.log(`Session ID: ${sessionID}`);
