@@ -40,7 +40,9 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                 }
 
                 function join(){
-                    socket.emit('joinGame', 'testRoom');
+                    socket.emit('joinGame', 'testRoom', (callback) => {
+                        console.log(callback);
+                    });
                 }
 
                 const joinBtn = document.createElement('button');
@@ -55,7 +57,6 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                 hostBtn.style.top = '25px';
 
                 hostBtn.onclick = host;
-
 
 
                 document.body.appendChild(joinBtn); 
@@ -78,6 +79,7 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                 socket.on('joinedRoom', (roomName) => {
                     console.log(`Joined Room: ${roomName}`);
                 });
+
                 console.log("Connected to server", 'Socket:', socket, 'ID:', socket.id);
             });
         }
@@ -101,14 +103,25 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 export class Backend{
     constructor(BE_engine){
         this.engine = BE_engine; // the Backend engine ran by the server
+        this.io = this.engine.io; // the socket.io instance
     }
 
     preload(){
-            
+        return new Promise((resolve, reject) => {
+            resolve();
+        });
+    }
+
+    onConnection(socket){   
+        console.log('socket connection detected', socket.id);
+    }
+
+    onDisconnection(socket){
+        console.log(socket.id);            
     }
 
     start(){
-
+        
     }
 
     update(){

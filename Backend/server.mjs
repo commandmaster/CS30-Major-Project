@@ -38,9 +38,11 @@ import { Engine } from "./engine.mjs";
 
 
 class Room{
-    constructor(name, engine, host = null){
+    constructor(serverHandler, name, io, host = null){
+        this.serverHandler = serverHandler;
+        this.io = io;
         this.name = name;
-        this.engine = engine;
+        this.engine = new Engine(this.io, this); 
         this.clients = {};
         this.host = host;
         this.cashedClients = new Map(); // Store the clients that have left the room (their reconnection ids) 
@@ -48,6 +50,8 @@ class Room{
 
     addClient(socket, isHost = false){
         this.clients[socket.id] = socket;
+        this.engine.onConnection(socket); // Call the onConnection method of the engine this allows scripts to run methods when a client connects
+        socket.join(this.name);
         
         if (isHost){
             this.host = socket;
@@ -57,6 +61,8 @@ class Room{
     }
 
     removeClient(socket){
+        this.engine.onDisconnection(socket); // Call the onDisconnection method of the engine this allows scripts to run methods when a client disconnects
+
         if (this.host === socket){
             this.host = null;
             for (const clientID in this.clients){
@@ -145,18 +151,24 @@ class ServerHandler{
             }
 
             callback('Room created');
-            this.rooms[roomName] = new Room(roomName, new Engine(this.io), socket);
+            this.rooms[roomName] = new Room(this, roomName, this.io, socket);
             socket.emit('joinedRoom', roomName);
             this.rooms[roomName].addClient(socket, true);
             console.log(`Created new room: ${roomName}`);
         });
 
-        socket.on('joinGame', (roomName) => {
-            if(this.rooms[roomName]){
+        socket.on('joinGame', (roomName, callback) => {
+            // check if socket is already hosting a room
+            if (this.rooms[roomName] && this.rooms[roomName].host === socket){
+                callback('You are already hosting this room');
+                return;
+            }
+
+            else if(this.rooms[roomName]){
                 this.rooms[roomName].addClient(socket, false);
-                socket.emit('joinedRoom', roomName);
+                callback('Joined room');
             } else{
-                socket.emit('roomNotFound');
+                callback('Room does not exist');
             }
         });
 

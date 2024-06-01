@@ -12,7 +12,6 @@ const __dirname = import.meta.dirname;
 class ScriptLoader{
     static getAssetConfig(){
         return new Promise(async (resolve, reject) => {
-
             const assetConfigPath = path.join(__dirname, "../",  "/public/assets/assetConfig.json");
             const data = await fsPromises.readFile(assetConfigPath, "utf-8")
             resolve(JSON.parse(data));
@@ -73,9 +72,10 @@ class BE_Enity{
 export class Engine {
     static BE_Enity = BE_Enity;
 
-    constructor(io) {
+    constructor(io, room) {
         this.modules = {};
         this.io = io;
+        this.room = room;
 
         this.dt = 0;
         this.lastUpdate = performance.now();
@@ -90,8 +90,8 @@ export class Engine {
     }
 
     #loadModules() {
+        this.allModulesLoaded = false;
         return new Promise(async (resolve, reject) => {
-            this.modules.networkManager = new NetworkManager(this, this.io);
             this.modules.physicsModule = new PhysicsModule(this);
 
             this.scriptModules = await ScriptLoader.loadScripts();
@@ -111,8 +111,35 @@ export class Engine {
                 }
             }
 
+            this.allModulesLoaded = true;
             resolve(this.modules);
         });
+    }
+
+    onConnection(socket){
+        const moduleTimeOutId = setTimeout(() => {
+            if (this.allModulesLoaded){
+                for (let module in this.modules){
+                    if (typeof this.modules[module].onConnection === "function"){
+                        this.modules[module].onConnection(socket);
+                    }
+                }
+                clearTimeout(moduleTimeOutId);
+            }
+        }, 50);
+    }
+
+    onDisconnection(socket){
+       const moduleTimeOutId = setTimeout(() => {
+            if (this.allModulesLoaded){
+                for (let module in this.modules){
+                    if (typeof this.modules[module].onDisconnection === "function"){
+                        this.modules[module].onDisconnection(socket);
+                    }
+                }
+                clearTimeout(moduleTimeOutId);
+            }
+        }, 50); 
     }
 
     addBE_Enity(name, BE_Enity){
