@@ -15,10 +15,10 @@ export class NetworkParser{
         const rigidBody = entity.getComponent('rigidbody');
         if (rigidBody !== undefined){
             const rigidBodyData = {
-                position: Number(rigidBody.rigidBody.position.toFixed(2)),
+                position: rigidBody.rigidBody.position.toFixed(2),
                 rotation: Number(rigidBody.rigidBody.rotation.toFixed(2)),
-                velocity: Number(rigidBody.rigidBody.velocity.toFixed(2)),
-                acceleration: Number(rigidBody.rigidBody.acceleration.toFixed(2)),
+                velocity: rigidBody.rigidBody.velocity.toFixed(2),
+                acceleration: rigidBody.rigidBody.acceleration.toFixed(2),
                 angularVelocity: Number(rigidBody.rigidBody.angularVelocity.toFixed(2)),
             }
 
@@ -39,6 +39,53 @@ export class NetworkParser{
         if (Object.keys(packet.physicsData).length === 0) delete packet.physicsData;
         if (Object.keys(packet.animationData).length === 0) delete packet.animationData;
 
+        return packet;
+    }
+
+    static encodeInputsIntoPacket(exportedInputs){
+        // the exported inputs are the inputs that are exported by the InputModule using it's built-in method
+
+        // encode the inputs into a packet
+        const packet = {
+            keyboardInputs: {},
+            mouseInputs: {},
+            gamepadInputs: {}
+        }
+
+        for (const inputName in exportedInputs.keyboardInputs){
+            const input = exportedInputs.keyboardInputs[inputName];
+            packet.keyboardInputs[inputName] = {
+                value: input.value,
+                needsReset: input.needsReset,
+            }
+        }
+
+        for (const inputName in exportedInputs.mouseInputs){
+            const input = exportedInputs.mouseInputs[inputName];
+            packet.mouseInputs[inputName] = {
+                value: input.value,
+                needsReset: input.needsReset,
+            }
+        }
+
+        for (const inputName in exportedInputs.gamepadInputs){
+            const input = exportedInputs.gamepadInputs[inputName];
+            packet.gamepadInputs[inputName] = {
+                value: input.value,
+                needsReset: input.needsReset,
+            }
+        }
+
+        return packet;
+    }
+
+    static createServerPacket(entityPacket, inputsPacket){
+        const serverPacket = {
+            entityPacket,
+            inputsPacket
+        }
+
+        return serverPacket; 
     }
 
     static parseEntityPacket(packet){  

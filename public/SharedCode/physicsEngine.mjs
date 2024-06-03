@@ -413,6 +413,20 @@ class Vec2{
         return {x, y};
     }
 
+    /**
+     * 
+     * @param {Number} [precision=2] The number of decimal places to round the values to 
+     * @returns {Object} The serialized version of this vector
+     * @memberof Vec2
+     * @description Serialize this vector to a object with a a specified number of decimal places for the x and y values
+     */
+    toFixed(precision){
+        // Alias method for serialize
+
+        // Serialize this vector
+        return this.serialize(precision);
+    }   
+
     #calculateMag(){
         // Pythagorean theorem to calculate the magnitude of the vector
         return Math.sqrt((this.#x ** 2) + (this.#y ** 2));

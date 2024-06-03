@@ -1,7 +1,8 @@
 import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.mjs";
 import { EntityAPI } from "../../../FrontendModules/entityModule.mjs";
-import { PhysicsAPI } from "../../../frontendModules/physicsModule.mjs";
+import { PhysicsAPI } from "../../../FrontendModules/physicsModule.mjs";
 import * as Physics from "../../../SharedCode/physicsEngine.mjs";
+import { NetworkParser } from "../../../SharedCode/networkParsing.mjs";
 
 
 export default class TestingLevelManager extends ScriptingAPI.LevelManager {
@@ -81,11 +82,26 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                 });
 
                 console.log("Connected to server", 'Socket:', socket, 'ID:', socket.id);
+
+                socket.on('serverUpdate', (data, callback) => {
+                    console.log(data);
+                    // compress entity into a packet
+                    const encodedEntityPacket = NetworkParser.encodeEntityIntoPacket(newEntity);
+                    console.log(encodedEntityPacket);
+
+                    const encodedInputsPacket = NetworkParser.encodeInputsIntoPacket(inputModule.exportInputs());
+                    console.log(encodedInputsPacket);
+
+                    const serverPacket = NetworkParser.createServerPacket(encodedEntityPacket, encodedInputsPacket);
+
+                    callback(serverPacket); 
+                });
             });
         }
         catch (err) {
             throw new Error(err);
         }
+
 
     }
 
@@ -114,6 +130,8 @@ export class Backend{
 
     onConnection(socket){   
         console.log('socket connection detected', socket.id);
+        this.engine.modules.physicsModule.createRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
+        console.log(this.engine.modules.physicsModule.physicsEngine.rigidBodies);
     }
 
     onDisconnection(socket){
@@ -125,6 +143,15 @@ export class Backend{
     }
 
     update(){
+        //console.log('update');
 
+        // handle the physics communication between the server and the clients
+       for (const clientID in this.engine.room.clients){
+            const client = this.engine.room.clients[clientID];
+            client.emit('serverUpdate', {data: 'test'}, (callback) => {
+                console.log(callback);
+            });
+       }
     }
+
 }

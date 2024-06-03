@@ -23,7 +23,7 @@ export default class <%= className %> extends ScriptingAPI.LevelManager {
 export class Backend{
     constructor(BE_engine){
         this.engine = BE_engine; // the Backend engine ran by the server
-        this.io = BE_engine.io; // the socket.io instance
+        this.io = this.engine.io; // the socket.io instance
     }
 
     preload(){
@@ -32,8 +32,16 @@ export class Backend{
         });
     }
 
-    start(){
+    onConnection(socket){   
+        console.log('socket connection detected', socket.id);
+    }
 
+    onDisconnection(socket){
+        console.log(socket.id);            
+    }
+
+    start(){
+        
     }
 
     update(){

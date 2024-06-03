@@ -42,6 +42,14 @@ export class InputModule extends Module {
         super(engineAPI);
     }
 
+    exportInputs(){
+        return {
+            keyboardInputs: this.keyboardInputs,
+            mouseInputs: this.mouseInputs,
+            gamepadInputs: this.gamepadInputs
+        };
+    }
+
     async preload() {
         this.keyboardInputs = {};
         this.mouseInputs = {};
