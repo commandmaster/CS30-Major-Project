@@ -43,6 +43,20 @@ export class InputModule extends Module {
     }
 
     exportInputs(){
+        const inputAPI = this.engineAPI.getAPI('input');
+
+        for (const input of Object.values(this.keyboardInputs)){
+            input.pressed = inputAPI.getInputDown(input.name);
+        }
+
+        for (const input of Object.values(this.mouseInputs)){
+            input.pressed= inputAPI.getInputDown(input.name);
+        }
+
+        // for (const input of Object.values(this.gamepadInputs)){
+        //     input.pressesed = this.engineAPI.getAPI('input').getInputDown(input.name);
+        // }
+
         return {
             keyboardInputs: this.keyboardInputs,
             mouseInputs: this.mouseInputs,

@@ -101,54 +101,56 @@ export class PhysicsModule extends Module{
     }
 
     start(){
-        // setup test senario
-        const rigidBody1 = new Rigidbody(new Vec2(100, 100), 0, 1, 1, []);
-        const rigidBody2 = new Rigidbody(new Vec2(300, -100), 0, 1, 1, []);
-        const rigidBody3 = new Rigidbody(new Vec2(200, 300), 0, 1, 1, []);
+        
+
+        // // setup test senario
+        // const rigidBody1 = new Rigidbody(new Vec2(100, 100), 0, 1, 1, []);
+        // const rigidBody2 = new Rigidbody(new Vec2(300, -100), 0, 1, 1, []);
+        // const rigidBody3 = new Rigidbody(new Vec2(200, 300), 0, 1, 1, []);
 
 
-        rigidBody1.addCollider(new RectangleCollider(rigidBody1, 0, 0, 35, 1, 100, 100));
-        rigidBody1.addCollider(new CircleCollider(rigidBody1, 50, 0, 1, 20));
-        rigidBody2.addCollider(new RectangleCollider(rigidBody2, 0, 0, 0, 1, 100, 100));
-        rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 50));
-        rigidBody3.addCollider(new TriangleCollider(rigidBody3, 0, 0, 0, 1, 100, 100));
-        rigidBody3.addCollider(new RectangleCollider(rigidBody3, -150, 0, 0, 1, 100, 100));
+        // rigidBody1.addCollider(new RectangleCollider(rigidBody1, 0, 0, 35, 1, 100, 100));
+        // rigidBody1.addCollider(new CircleCollider(rigidBody1, 50, 0, 1, 20));
+        // rigidBody2.addCollider(new RectangleCollider(rigidBody2, 0, 0, 0, 1, 100, 100));
+        // rigidBody2.addCollider(new CircleCollider(rigidBody2, -250, 0, 1, 50));
+        // rigidBody3.addCollider(new TriangleCollider(rigidBody3, 0, 0, 0, 1, 100, 100));
+        // rigidBody3.addCollider(new RectangleCollider(rigidBody3, -150, 0, 0, 1, 100, 100));
         
 
 
-        window.addEventListener('mousedown', (e) => {
+        // window.addEventListener('mousedown', (e) => {
             
-            const camera = this.engineAPI.getAPI('render').getCamera();
-            const worldPos = camera.screenToWorld(e.clientX, e.clientY);
+        //     const camera = this.engineAPI.getAPI('render').getCamera();
+        //     const worldPos = camera.screenToWorld(e.clientX, e.clientY);
             
-            if (e.button === 0) {
-                rigidBody2.position = new Vec2(worldPos.x, worldPos.y);
+        //     if (e.button === 0) {
+        //         rigidBody2.position = new Vec2(worldPos.x, worldPos.y);
             
-                rigidBody2.velocity = new Vec2(-100, 0);
-            }
+        //         rigidBody2.velocity = new Vec2(-100, 0);
+        //     }
 
-            if (e.button === 1){
-                for (let i = 0; i < 100; i++){
-                    const newRB = new Rigidbody(new Vec2(worldPos.x + i * 5, worldPos.y + Math.random()*150 - 75), 0, 1, 1, []);
-                    newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
-                    this.addRigidbody(newRB);
-                }
+        //     if (e.button === 1){
+        //         for (let i = 0; i < 100; i++){
+        //             const newRB = new Rigidbody(new Vec2(worldPos.x + i * 5, worldPos.y + Math.random()*150 - 75), 0, 1, 1, []);
+        //             newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
+        //             this.addRigidbody(newRB);
+        //         }
                 
-            }
+        //     }
             
-        });
+        // });
 
-        rigidBody1.velocity = new Vec2(100, 0);
-        rigidBody3.velocity = new Vec2(0, -100);
+        // rigidBody1.velocity = new Vec2(100, 0);
+        // rigidBody3.velocity = new Vec2(0, -100);
 
 
-        const ground = new Rigidbody(new Vec2(0, 500), 0, Infinity, 1, []);
-        ground.addCollider(new RectangleCollider(ground, 0, 0, 0, 1, 2000, 100));
+        // const ground = new Rigidbody(new Vec2(0, 500), 0, Infinity, 1, []);
+        // ground.addCollider(new RectangleCollider(ground, 0, 0, 0, 1, 2000, 100));
 
-        this.addRigidbody(rigidBody1);
-        this.addRigidbody(rigidBody2);
-        this.addRigidbody(rigidBody3);
-        this.addRigidbody(ground);
+        // this.addRigidbody(rigidBody1);
+        // this.addRigidbody(rigidBody2);
+        // this.addRigidbody(rigidBody3);
+        // this.addRigidbody(ground);
 
     }
 

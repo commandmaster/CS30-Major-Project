@@ -57,6 +57,7 @@ export class NetworkParser{
             packet.keyboardInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
+                pressed: input.pressed,
             }
         }
 
@@ -65,6 +66,7 @@ export class NetworkParser{
             packet.mouseInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
+                pressed: input.pressed,
             }
         }
 
@@ -73,6 +75,7 @@ export class NetworkParser{
             packet.gamepadInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
+                pressed: input.pressed,
             }
         }
 
@@ -150,6 +153,7 @@ export class NetworkParser{
             inputs.keyboardInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
+                pressed: input.pressed,
             }
         }
 
@@ -158,6 +162,7 @@ export class NetworkParser{
             inputs.mouseInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
+                pressed: input.pressed,
             }
         }
 
@@ -166,6 +171,7 @@ export class NetworkParser{
             inputs.gamepadInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
+                pressed: input.pressed,  
             }
         }
 

@@ -84,7 +84,6 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                 console.log("Connected to server", 'Socket:', socket, 'ID:', socket.id);
 
                 socket.on('serverUpdate', (data, callback) => {
-                    console.log(data);
                     // compress entity into a packet
                     const encodedEntityPacket = NetworkParser.encodeEntityIntoPacket(newEntity);
                     console.log(encodedEntityPacket);
@@ -95,6 +94,9 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                     const serverPacket = NetworkParser.createServerPacket(encodedEntityPacket, encodedInputsPacket);
 
                     callback(serverPacket); 
+
+                    console.log(data);
+                    newEntity.updateEntityState(data.playerEntity);
                 });
             });
         }
@@ -174,10 +176,11 @@ export class Backend{
                 const inputs = clientInputs.keyboardInputs;
                 if (inputs !== undefined){
                     if (inputs.horizontal !== undefined){
-                        rb.applyImpulse(new Physics.Vec2(inputs.horizontal.value * 1000, 0));
+                        console.log(inputs.horizontal.pressed);
+                        if (inputs.horizontal.pressed) rb.applyImpulse(new Physics.Vec2(inputs.horizontal.value * 1000, 0));
                     }
                     if (inputs.vertical !== undefined){
-                        rb.applyImpulse(new Physics.Vec2(0, inputs.vertical.value * 1000));
+                        if (inputs.vertical.pressed) rb.applyImpulse(new Physics.Vec2(0, inputs.vertical.value * 1000));
                     }
                     if (inputs.jump !== undefined){
                         if (inputs.jump.value === true){

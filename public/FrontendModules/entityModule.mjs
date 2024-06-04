@@ -178,6 +178,29 @@ class Entity {
          return this.components.get(componentName);
     }
 
+    updateEntityState(entityPacket){
+        if (entityPacket === null || entityPacket === undefined) throw new Error("Entity packet is null or undefined!");           
+
+        if (entityPacket.animationData !== undefined) this.currentAnim = entityPacket.animationData.currentAnim;
+        if (entityPacket.animationData !== undefined) this.currentFrame = entityPacket.animationData.frame;
+
+        if (entityPacket.physicsData !== undefined) {
+            const rigidBody = this.getComponent('rigidbody');
+            if (rigidBody !== undefined){
+                rigidBody.rigidBody.position = new Vec2(entityPacket.physicsData.position.x, entityPacket.physicsData.position.y);
+                rigidBody.rigidBody.rotation = entityPacket.physicsData.rotation;
+                rigidBody.rigidBody.velocity = new Vec2(entityPacket.physicsData.velocity.x, entityPacket.physicsData.velocity.y);
+                rigidBody.rigidBody.acceleration = new Vec2(entityPacket.physicsData.acceleration.x, entityPacket.physicsData.acceleration.y);
+                rigidBody.rigidBody.angularVelocity = entityPacket.physicsData.angularVelocity;
+            }
+            else {
+                // If the rigidbody component does not exist in the entity and the packet includes physics data, throw an error
+                // This ussually means the worng entity was updated
+                throw new Error("Rigidbody component does not exist in the entity and the packet includes physics data!, Make sure the correct entity is being updated!");
+            }
+        }
+    }
+
    start() {
         //
         this.components.forEach((component) => {
