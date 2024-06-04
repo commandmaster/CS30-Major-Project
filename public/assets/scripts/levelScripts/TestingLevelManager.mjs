@@ -130,7 +130,11 @@ export class Backend{
 
     onConnection(socket){   
         console.log('socket connection detected', socket.id);
-        this.engine.modules.physicsModule.createRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
+        // this.engine.modules.physicsModule.createRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
+        const newEntity = new this.engine.constructor.BE_Enity(this.engine, String(socket.id)); // create a new entity for the client and setting it's name to be the socket id
+        newEntity.addRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
+        newEntity.rb.addCollider(new Physics.CircleCollider(newEntity.rb, 0, 0, 1, 10));
+
         console.log(this.engine.modules.physicsModule.physicsEngine.rigidBodies);
     }
 
@@ -143,15 +147,49 @@ export class Backend{
     }
 
     update(){
-        //console.log('update');
-
         // handle the physics communication between the server and the clients
-       for (const clientID in this.engine.room.clients){
+
+        for (const clientID in this.engine.room.clients){
+            if (clientID === undefined) throw new Error('Client ID is undefined (this should not happen!)');
+
             const client = this.engine.room.clients[clientID];
-            client.emit('serverUpdate', {data: 'test'}, (callback) => {
-                console.log(callback);
+
+            
+
+            const clientEntity = this.engine.BE_Enities[String(clientID)];
+
+            if (clientEntity === undefined) continue;
+
+            const serializedBackendEntity = NetworkParser.encodeServerEntityIntoPacket(clientEntity);
+
+            client.emit('serverUpdate', {playerEntity: serializedBackendEntity}, (callback) => {
+                const clientInputs = NetworkParser.decodeInputsFromPacket(callback);
+                const clientState = NetworkParser.decodeEntityFromPacket(callback); 
+
+                // update the backend entity with the client state and add the inputs to the physics body
+                clientEntity.updateEntityState(clientState); // soecifically designed to update the animation data and other general data for the object, the inputs and physics are handled speratlly to prevent cheating or desync issues
+                
+                // update the physics body with the inputs
+                const rb = clientEntity.rb;
+                const inputs = clientInputs.keyboardInputs;
+                if (inputs !== undefined){
+                    if (inputs.horizontal !== undefined){
+                        rb.applyImpulse(new Physics.Vec2(inputs.horizontal.value * 1000, 0));
+                    }
+                    if (inputs.vertical !== undefined){
+                        rb.applyImpulse(new Physics.Vec2(0, inputs.vertical.value * 1000));
+                    }
+                    if (inputs.jump !== undefined){
+                        if (inputs.jump.value === true){
+                            rb.velocity.y = 10;
+                        }
+                    }
+                }
+
+
+
             });
-       }
+        }
     }
 
 }

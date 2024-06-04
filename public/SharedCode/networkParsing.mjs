@@ -79,6 +79,53 @@ export class NetworkParser{
         return packet;
     }
 
+    static encodeServerEntityIntoPacket(entity){
+        // encode physics data, animation state, and other relevant data into a packet
+        // similar to the encodeEntityIntoPacket method but this is used to encode the server-side entity (the backend entity)
+        // The backend entity has a slightly different structure than the frontend entity which is why this method is needed
+
+
+        const packet = {
+            name: entity.name,
+            physicsData: {
+                
+            },
+            animationData: {
+                    
+            }
+       } 
+
+        // physics data
+        const rigidBody = entity.rb;
+        if (rigidBody !== undefined){
+            const rigidBodyData = {
+                position: rigidBody.position.toFixed(2),
+                rotation: Number(rigidBody.rotation.toFixed(2)),
+                velocity: rigidBody.velocity.toFixed(2),
+                acceleration: rigidBody.acceleration.toFixed(2),
+                angularVelocity: Number(rigidBody.angularVelocity.toFixed(2)),
+            }
+
+            packet.physicsData = rigidBodyData;
+        }
+
+        // animation data
+        const animationComponent = entity.animationComponent;
+        if (animationComponent !== undefined){
+            const animationData = {
+                currentAnim: animationComponent.currentAnimationName,
+                frame: animationComponent.currentFrame,
+            }
+
+            packet.animationData = animationData;
+        }
+
+        if (Object.keys(packet.physicsData).length === 0) delete packet.physicsData;
+        if (Object.keys(packet.animationData).length === 0) delete packet.animationData;
+
+        return packet;
+    }
+
     static createServerPacket(entityPacket, inputsPacket){
         const serverPacket = {
             entityPacket,
@@ -88,7 +135,53 @@ export class NetworkParser{
         return serverPacket; 
     }
 
-    static parseEntityPacket(packet){  
+    static decodeInputsFromPacket(serverPacket){
+        // not sticktly nessary now but will be very usefull in the future if the complexity of the inputs increases
+        const inputsPacket = serverPacket.inputsPacket;
 
+        const inputs = {
+            keyboardInputs: {},
+            mouseInputs: {},
+            gamepadInputs: {}
+        }
+
+        for (const inputName in inputsPacket.keyboardInputs){
+            const input = inputsPacket.keyboardInputs[inputName];
+            inputs.keyboardInputs[inputName] = {
+                value: input.value,
+                needsReset: input.needsReset,
+            }
+        }
+
+        for (const inputName in inputsPacket.mouseInputs){
+            const input = inputsPacket.mouseInputs[inputName];
+            inputs.mouseInputs[inputName] = {
+                value: input.value,
+                needsReset: input.needsReset,
+            }
+        }
+
+        for (const inputName in inputsPacket.gamepadInputs){
+            const input = inputsPacket.gamepadInputs[inputName];
+            inputs.gamepadInputs[inputName] = {
+                value: input.value,
+                needsReset: input.needsReset,
+            }
+        }
+
+        return inputs;
+    }
+
+    static decodeEntityFromPacket(serverPacket){
+        // return the entity packet as a state that can be used to update the BACKEND entity (the server-side entity) 
+        const entityPacket = serverPacket.entityPacket;
+
+        const entityState = {
+            name: entityPacket.name,
+            physicsData: entityPacket.physicsData,
+            animationData: entityPacket.animationData
+        }
+
+        return entityState;
     }
 }

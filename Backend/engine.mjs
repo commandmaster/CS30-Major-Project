@@ -52,6 +52,15 @@ class BE_Enity{
         this.rb = null;
 
         this.engine.addBE_Enity(name, this);
+
+        this.currentAnim = null;
+        this.currenFrame = 0;
+    }
+
+    updateEntityState(decodedEntityPacket){
+        // update the entity with the new state
+        if (decodedEntityPacket.animationData !== undefined) this.currentAnim = decodedEntityPacket.animationData.currentAnim;
+        if (decodedEntityPacket.animationData !== undefined) this.currentFrame = decodedEntityPacket.animationData.frame;
     }
 
     addRigidBody({position, rotation, mass, bounce, colliders}){
