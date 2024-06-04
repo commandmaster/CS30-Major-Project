@@ -46,11 +46,11 @@ export class InputModule extends Module {
         const inputAPI = this.engineAPI.getAPI('input');
 
         for (const input of Object.values(this.keyboardInputs)){
-            input.pressed = inputAPI.getInputDown(input.name);
+            input.pressed = inputAPI.getInputDown(input.name) !== input.defaultValue;
         }
 
         for (const input of Object.values(this.mouseInputs)){
-            input.pressed= inputAPI.getInputDown(input.name);
+            input.pressed = inputAPI.getInputDown(input.name) !== input.defaultValue;
         }
 
         // for (const input of Object.values(this.gamepadInputs)){

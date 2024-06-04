@@ -54,6 +54,9 @@ export class NetworkParser{
 
         for (const inputName in exportedInputs.keyboardInputs){
             const input = exportedInputs.keyboardInputs[inputName];
+
+            if (input.value === input.defaultValue) continue;
+
             packet.keyboardInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
@@ -63,6 +66,9 @@ export class NetworkParser{
 
         for (const inputName in exportedInputs.mouseInputs){
             const input = exportedInputs.mouseInputs[inputName];
+
+            if (input.value === input.defaultValue) continue;
+
             packet.mouseInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,
@@ -72,6 +78,9 @@ export class NetworkParser{
 
         for (const inputName in exportedInputs.gamepadInputs){
             const input = exportedInputs.gamepadInputs[inputName];
+
+            if (input.value === input.defaultValue) continue;
+
             packet.gamepadInputs[inputName] = {
                 value: input.value,
                 needsReset: input.needsReset,

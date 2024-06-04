@@ -164,6 +164,8 @@ export class Backend{
 
             const serializedBackendEntity = NetworkParser.encodeServerEntityIntoPacket(clientEntity);
 
+            let horizontalPressed = false;
+            let verticalPressed = false;
             client.emit('serverUpdate', {playerEntity: serializedBackendEntity}, (callback) => {
                 const clientInputs = NetworkParser.decodeInputsFromPacket(callback);
                 const clientState = NetworkParser.decodeEntityFromPacket(callback); 
@@ -175,13 +177,31 @@ export class Backend{
                 const rb = clientEntity.rb;
                 const inputs = clientInputs.keyboardInputs;
                 if (inputs !== undefined){
+                    //console.log(inputs);
+
                     if (inputs.horizontal !== undefined){
-                        console.log(inputs.horizontal.pressed);
-                        if (inputs.horizontal.pressed) rb.applyImpulse(new Physics.Vec2(inputs.horizontal.value * 1000, 0));
+                        console.log(inputs.horizontal);
+                        if (!horizontalPressed){
+                            console.log('applying impulse')
+                            rb.applyImpulse(new Physics.Vec2(inputs.horizontal.value * 1000, 0));
+                        }
+                        horizontalPressed = true;
+                    } else {
+                        horizontalPressed = false;
                     }
+
+
                     if (inputs.vertical !== undefined){
-                        if (inputs.vertical.pressed) rb.applyImpulse(new Physics.Vec2(0, inputs.vertical.value * 1000));
+                        if (!verticalPressed){
+                            console.log('appying impulse')
+                            rb.applyImpulse(new Physics.Vec2(0, inputs.vertical.value * 1000));
+                        }
+                        verticalPressed = true;
+                    } else{
+                        verticalPressed = false;
                     }
+
+
                     if (inputs.jump !== undefined){
                         if (inputs.jump.value === true){
                             rb.velocity.y = 10;
