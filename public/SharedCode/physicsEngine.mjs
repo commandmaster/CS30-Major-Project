@@ -390,6 +390,22 @@ class Vec2{
 
     /**
      * 
+     * @param {Vec2} v The vector to lerp towards 
+     * @param {Number} t The interpolation value 
+     * @returns {Vec2} This vector after interpolation 
+     * @memberof Vec2 
+     * @description Linearly interpolate this vector towards another vector 
+     */
+    lerpTowards(v, t){
+        // Linearly interpolate this vector towards another vector
+        this.#x = this.#x + (v.x - this.#x) * t;
+        this.#y = this.#y + (v.y - this.#y) * t;
+
+        return this;
+    }
+
+    /**
+     * 
      * @returns {Vec2} A clone/copy of this vector
      * @memberof Vec2
      * @description Create a clone/copy of this vector

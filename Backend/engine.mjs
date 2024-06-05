@@ -76,10 +76,72 @@ class BE_Enity{
     }
 }
 
+class BE_Input{
+    constructor(name, defaultValue = 0){
+        this.defaultValue = defaultValue;
+        this.name = name;
+        this.value = defaultValue;
+        this.pressed = false;
+    }
+
+    inputDown(value){
+        this.value = value;
+        this.pressed = true;
+    }
+
+    inputUp(value){
+        this.value = value;
+        this.pressed = false;
+    }
+}
+
+
+class BE_Player extends BE_Enity{
+    constructor(engine, name){
+        super(engine, name);
+
+        this.inputs = {}
+    }
+
+    addInput(inputName, defaultValue = false){
+        this.inputs[inputName] = new BE_Input(inputName, defaultValue);
+    }
+
+    inputDown(inputName, value){
+        this.inputs[inputName].inputDown(value);
+    }
+
+    inputUp(inputName, value){
+        this.inputs[inputName].inputUp(value);
+    }
+
+    isPressed(inputName){
+        return this.inputs[inputName].value !== this.inputs[inputName].defaultValue;
+    }
+
+    getInput(inputName){
+        return this.inputs[inputName].value;
+    }
+
+    alreadyPressed(inputName){
+        return this.inputs[inputName].pressed;
+    }
+
+    start(){
+        
+    }
+
+    update(dt){
+        
+    }
+}
+
 
 
 export class Engine {
     static BE_Enity = BE_Enity;
+    static BE_Player = BE_Player;
+    static BE_Input = BE_Input;
 
     constructor(io, room) {
         this.modules = {};

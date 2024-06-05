@@ -85,18 +85,24 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
                 socket.on('serverUpdate', (data, callback) => {
                     // compress entity into a packet
-                    const encodedEntityPacket = NetworkParser.encodeEntityIntoPacket(newEntity);
-                    console.log(encodedEntityPacket);
+                    const encodedEntityPacket = NetworkParser.encodePlayerIntoPacket(newEntity);
+                    //console.log(encodedEntityPacket);
 
                     const encodedInputsPacket = NetworkParser.encodeInputsIntoPacket(inputModule.exportInputs());
-                    console.log(encodedInputsPacket);
+                    //console.log(encodedInputsPacket);
 
-                    const serverPacket = NetworkParser.createServerPacket(encodedEntityPacket, encodedInputsPacket);
+                    const clientPacket = NetworkParser.createClientPacket(encodedEntityPacket, encodedInputsPacket);
 
-                    callback(serverPacket); 
+                    callback(clientPacket); 
 
-                    console.log(data);
+                    //console.log(data);
                     newEntity.updateEntityState(data.playerEntity);
+
+                    for (const entityName in data.entities){
+                        const entityData = data.entities[entityName];
+                        const entity = this.level.getEntity(entityName);
+                        entity.updateEntityState(entityData);
+                    }
                 });
             });
         }
@@ -133,9 +139,12 @@ export class Backend{
     onConnection(socket){   
         console.log('socket connection detected', socket.id);
         // this.engine.modules.physicsModule.createRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
-        const newEntity = new this.engine.constructor.BE_Enity(this.engine, String(socket.id)); // create a new entity for the client and setting it's name to be the socket id
-        newEntity.addRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
-        newEntity.rb.addCollider(new Physics.CircleCollider(newEntity.rb, 0, 0, 1, 10));
+        const newPlayer = new this.engine.constructor.BE_Player(this.engine, String(socket.id)); // create a new entity for the client and setting it's name to be the socket id
+        newPlayer.addRigidBody({position: new Physics.Vec2(0, 0), rotation: 0, mass: 1, bounce: 1, colliders: []});
+        newPlayer.rb.addCollider(new Physics.CircleCollider(newPlayer.rb, 0, 0, 1, 10));
+
+        newPlayer.addInput('horizontal', 0);
+        newPlayer.addInput('vertical', 0); 
 
         console.log(this.engine.modules.physicsModule.physicsEngine.rigidBodies);
     }
@@ -162,13 +171,16 @@ export class Backend{
 
             if (clientEntity === undefined) continue;
 
-            const serializedBackendEntity = NetworkParser.encodeServerEntityIntoPacket(clientEntity);
 
-            let horizontalPressed = false;
-            let verticalPressed = false;
-            client.emit('serverUpdate', {playerEntity: serializedBackendEntity}, (callback) => {
+       
+            const BE_Enities = this.engine.BE_Enities;
+
+            const serverPacket = NetworkParser.createServerPacket(clientEntity, BE_Enities);
+        
+
+            client.emit('serverUpdate', serverPacket, (callback) => {
                 const clientInputs = NetworkParser.decodeInputsFromPacket(callback);
-                const clientState = NetworkParser.decodeEntityFromPacket(callback); 
+                const clientState = NetworkParser.decodePlayerFromPacket(callback); 
 
                 // update the backend entity with the client state and add the inputs to the physics body
                 clientEntity.updateEntityState(clientState); // soecifically designed to update the animation data and other general data for the object, the inputs and physics are handled speratlly to prevent cheating or desync issues
@@ -176,41 +188,31 @@ export class Backend{
                 // update the physics body with the inputs
                 const rb = clientEntity.rb;
                 const inputs = clientInputs.keyboardInputs;
-                if (inputs !== undefined){
-                    //console.log(inputs);
 
+                if (inputs !== undefined){
                     if (inputs.horizontal !== undefined){
-                        console.log(inputs.horizontal);
-                        if (!horizontalPressed){
-                            console.log('applying impulse')
+                        if (!clientEntity.alreadyPressed('horizontal')){
+                            console.log(inputs.horizontal.value);
                             rb.applyImpulse(new Physics.Vec2(inputs.horizontal.value * 1000, 0));
                         }
-                        horizontalPressed = true;
-                    } else {
-                        horizontalPressed = false;
-                    }
 
+                        clientEntity.inputDown('horizontal', inputs.horizontal.value);
+                    } else {
+                        clientEntity.inputUp('horizontal', 0);
+                    }
 
                     if (inputs.vertical !== undefined){
-                        if (!verticalPressed){
-                            console.log('appying impulse')
+                        if (!clientEntity.alreadyPressed('vertical')){
                             rb.applyImpulse(new Physics.Vec2(0, inputs.vertical.value * 1000));
                         }
-                        verticalPressed = true;
-                    } else{
-                        verticalPressed = false;
-                    }
 
-
-                    if (inputs.jump !== undefined){
-                        if (inputs.jump.value === true){
-                            rb.velocity.y = 10;
-                        }
+                        clientEntity.inputDown('vertical', inputs.vertical.value);
+                    } else {
+                        clientEntity.inputUp('vertical', 0);
                     }
                 }
 
-
-
+                
             });
         }
     }

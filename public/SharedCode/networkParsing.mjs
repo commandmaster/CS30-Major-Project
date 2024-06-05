@@ -1,8 +1,8 @@
 export class NetworkParser{
-    static encodeEntityIntoPacket(entity){
+    static encodePlayerIntoPacket(playerEntity){
         // encode physics data, animation state, and other relevant data into a packet
        const packet = {
-            name: entity.name,
+            name: playerEntity.name,
             physicsData: {
                 
             },
@@ -12,7 +12,7 @@ export class NetworkParser{
        } 
 
         // physics data
-        const rigidBody = entity.getComponent('rigidbody');
+        const rigidBody = playerEntity.getComponent('rigidbody');
         if (rigidBody !== undefined){
             const rigidBodyData = {
                 position: rigidBody.rigidBody.position.toFixed(2),
@@ -26,7 +26,7 @@ export class NetworkParser{
         }
 
         // animation data
-        const animationComponent = entity.getComponent('animation');
+        const animationComponent = playerEntity.getComponent('animation');
         if (animationComponent !== undefined){
             const animationData = {
                 currentAnim: animationComponent.currentAnimationName,
@@ -91,6 +91,64 @@ export class NetworkParser{
         return packet;
     }
 
+    encodeEntitiesIntoPacket(entities){
+        // encode the entities into a packet
+        const packet = {
+            entities: []
+        }
+
+        for (const entity of entities){
+            const encodedEntity = this.encodeEntityIntoPacket(entity);
+            packet.entities.push(encodedEntity);
+        }
+
+        return packet;
+    }
+
+    static encodeEntityIntoPacket(entity){
+        // encode physics data, animation state, and other relevant data into a packet
+        const packet = {
+            name: entity.name,
+            physicsData: {
+                
+            },
+            animationData: {
+                    
+            }
+         }
+
+        // physics data
+        const rigidBody = entity.getComponent('rigidbody');
+        if (rigidBody !== undefined){
+            const rigidBodyData = {
+                position: rigidBody.rigidBody.position.toFixed(2),
+                rotation: Number(rigidBody.rigidBody.rotation.toFixed(2)),
+                velocity: rigidBody.rigidBody.velocity.toFixed(2),
+                acceleration: rigidBody.rigidBody.acceleration.toFixed(2),
+                angularVelocity: Number(rigidBody.rigidBody.angularVelocity.toFixed(2)),
+            }
+
+            packet.physicsData = rigidBodyData;
+        }
+
+
+        // animation data
+        const animationComponent = entity.getComponent('animation');
+        if (animationComponent !== undefined){
+            const animationData = {
+                currentAnim: animationComponent.currentAnimationName,
+                frame: animationComponent.currentFrame,
+            }
+
+            packet.animationData = animationData;
+        }
+
+        if (Object.keys(packet.physicsData).length === 0) delete packet.physicsData;
+        if (Object.keys(packet.animationData).length === 0) delete packet.animationData;
+
+        return packet;
+    }
+
     static encodeServerEntityIntoPacket(entity){
         // encode physics data, animation state, and other relevant data into a packet
         // similar to the encodeEntityIntoPacket method but this is used to encode the server-side entity (the backend entity)
@@ -105,7 +163,7 @@ export class NetworkParser{
             animationData: {
                     
             }
-       } 
+        } 
 
         // physics data
         const rigidBody = entity.rb;
@@ -138,13 +196,40 @@ export class NetworkParser{
         return packet;
     }
 
-    static createServerPacket(entityPacket, inputsPacket){
-        const serverPacket = {
-            entityPacket,
+    static encodeServerEntitesIntoPacket(entities){
+        // encode the entities into a packet
+        const packet = {
+            entities: {}
+        }
+
+
+        for (const entityName in entities){
+            const encodedEntity = this.encodeServerEntityIntoPacket(entities[entityName]);
+            packet.entities[entityName] = encodedEntity;
+        }
+
+        return packet;
+    }
+
+    static createClientPacket(playerPacket, inputsPacket){
+        const clientPacket = {
+            playerPacket,
             inputsPacket
         }
 
-        return serverPacket; 
+        return clientPacket; 
+    }
+
+    static createServerPacket(BE_player, BE_entities){
+        const serverPacket = {
+            playerEntity: this.encodeServerEntityIntoPacket(BE_player),
+            otherEntities: this.encodeServerEntitesIntoPacket(BE_entities)
+        }
+
+        if (typeof serverPacket.otherEntities === 'array') serverPacket.otherEntities.filter(entity => entity.name !== BE_player.name);
+        if (typeof serverPacket.otherEntities === 'object') delete serverPacket.otherEntities[BE_player.name];
+
+        return serverPacket;
     }
 
     static decodeInputsFromPacket(serverPacket){
@@ -187,14 +272,14 @@ export class NetworkParser{
         return inputs;
     }
 
-    static decodeEntityFromPacket(serverPacket){
+    static decodePlayerFromPacket(serverPacket){
         // return the entity packet as a state that can be used to update the BACKEND entity (the server-side entity) 
-        const entityPacket = serverPacket.entityPacket;
+        const playerPacket = serverPacket.playerPacket;
 
         const entityState = {
-            name: entityPacket.name,
-            physicsData: entityPacket.physicsData,
-            animationData: entityPacket.animationData
+            name: playerPacket.name,
+            physicsData: playerPacket.physicsData,
+            animationData: playerPacket.animationData
         }
 
         return entityState;
