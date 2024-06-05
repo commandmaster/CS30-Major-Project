@@ -217,6 +217,13 @@ export class Engine {
         this.BE_Enities[name] = BE_Enity;
     }
 
+    deleteEntity(name){
+        if (this.BE_Enities[name] !== undefined) {
+            if (this.BE_Enities[name].rb !== null) this.modules.physicsModule.physicsEngine.deleteRigidbody(this.BE_Enities[name].rb);
+            delete this.BE_Enities[name];
+        }
+    }
+
     update() {
         this.dt = performance.now() - this.lastUpdate;
         this.lastUpdate = performance.now();

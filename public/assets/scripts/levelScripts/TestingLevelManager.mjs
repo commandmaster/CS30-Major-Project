@@ -97,12 +97,23 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
                     //console.log(data);
                     newEntity.updateEntityState(data.playerEntity);
-
                     for (const entityName in data.entities){
                         const entityData = data.entities[entityName];
                         const entity = this.level.getEntity(entityName);
                         entity.updateEntityState(entityData);
                     }
+                });
+
+                socket.on('createEntity', (entityData) => {
+                    const serializedEntity = entityData.serializedEntity;
+                    
+                    const entityApi = this.engineAPI.getAPI("entity");
+                    const entity = new EntityAPI.Entity.fromJSON(entityApi, serializedEntity, {
+                        position: new Physics.Vec2(entityData.position.x, entityData.position.y), 
+                        rotation: entityData.rotation, 
+                        velocity: new Physics.Vec2(entityData.velocity.x, entityData.velocity.y)
+                    });
+                    this.level.addEntity(entity);
                 });
             });
         }
@@ -132,6 +143,9 @@ export class Backend{
 
     preload(){
         return new Promise((resolve, reject) => {
+            // create the map and send the associated entities to the clients 
+            
+
             resolve();
         });
     }
@@ -147,14 +161,17 @@ export class Backend{
         newPlayer.addInput('vertical', 0); 
 
         console.log(this.engine.modules.physicsModule.physicsEngine.rigidBodies);
+
+
     }
 
     onDisconnection(socket){
         console.log(socket.id);            
+        this.engine.deleteEntity(String(socket.id));
     }
 
     start(){
-        
+       
     }
 
     update(){

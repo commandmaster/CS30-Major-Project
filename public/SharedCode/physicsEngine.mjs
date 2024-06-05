@@ -1585,6 +1585,20 @@ class PhysicsEngine{
         this.rigidBodies.push(rigidbody);
     }
 
+    /**
+     * @param {Rigidbody} rigidbody The rigidbody to delete from the physics engine
+     * @description Deletes a rigidbody from the physics engine
+     * @returns {void}
+     * @method
+     * @public
+     */
+    deleteRigidbody(rigidbody){
+        const index = this.rigidBodies.indexOf(rigidbody);
+        if (index !== -1){
+            this.rigidBodies.splice(index, 1);
+        }
+    }
+
     //#region Collision Handling
     #checkAllCollisions(){
         for (let i = 0; i < this.rigidBodies.length; i++){
