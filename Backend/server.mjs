@@ -38,19 +38,41 @@ import { Engine } from "./engine.mjs";
 
 
 class Room{
-    constructor(name, engine){
+    constructor(serverHandler, name, io, host = null){
+        this.serverHandler = serverHandler;
+        this.io = io;
         this.name = name;
-        this.engine = engine;
+        this.engine = new Engine(this.io, this); 
         this.clients = {};
+        this.host = host;
         this.cashedClients = new Map(); // Store the clients that have left the room (their reconnection ids) 
     }
 
-    addClient(socket){
+    addClient(socket, isHost = false){
         this.clients[socket.id] = socket;
+        this.engine.onConnection(socket); // Call the onConnection method of the engine this allows scripts to run methods when a client connects
+        socket.join(this.name);
+        
+        if (isHost){
+            this.host = socket;
+        }
+
         this.cashedClients.delete(socket.id);
     }
 
     removeClient(socket){
+        this.engine.onDisconnection(socket); // Call the onDisconnection method of the engine this allows scripts to run methods when a client disconnects
+
+        if (this.host === socket){
+            this.host = null;
+            for (const clientID in this.clients){
+                this.clients[clientID].disconnect();
+                delete this.clients[clientID];
+            }
+        }
+
+        
+
         delete this.clients[socket.id];
         this.cashedClients.set(socket.id, socket.id);
     }
@@ -113,61 +135,55 @@ class ServerHandler{
             });
         }
 
-      
+        socket.on('hostGame', (roomName, callback) => {
+            roomName = roomName.trim();
 
-
-        socket.on('requestJoin', async () => {
-            let sessionID = await getSessionID(socket); // Get the session ID of the user
-
-            console.log(`Session ID: ${sessionID}`);
-            if (sessionID === null){
-                sessionID = crypto.randomUUID(); // Generate a new session ID if the user does not have one
-                socket.emit('setSessionID', sessionID); // Send the session ID to the user
-            }
-
-            // try reconnecting the user to a room
-            for (const room in this.rooms){
-                if(this.rooms[room].cashedClients.has(socket.id)){
-                    this.rooms[room].addClient(socket);
-                    socket.emit('joinedRoom', room);
-                    return;
-                }
-            }
+            const matchRegex = new RegExp(/[^a-zA-Z0-9_]/g);
             
-            // Create a new room if the max number of rooms has not been reached and the previous room is full
-            if(Object.keys(this.rooms).length < maxRooms && totalUsers % maxRoomSize === 0){
-                const roomName = crypto.randomUUID();
-                this.rooms[roomName] = new Room(roomName, new Engine(this.io));
-                socket.emit('joinedRoom', roomName);
-                this.rooms[roomName].addClient(socket);
-            } else{
-                // Check if any rooms have space
-       
-                for(const roomName in this.rooms){
-                    const room = this.rooms[roomName];
-                    if(Object.keys(room.clients).length + room.cashedClients.length < maxRoomSize){
-                        socket.emit('joinedRoom', roomName);
-                        room.addClient(socket);
-                        break;
-                    }
-                }
-
-
+            if (matchRegex.test(roomName)){
+                callback('Room name can only contain letters, numbers and underscores');
+                return;
             }
 
-            const roomName = crypto.randomUUID();
-            this.rooms[roomName] = new Room(roomName, new Engine(this.io));
-            this.rooms[roomName].addClient(socket);
+            if (this.rooms[roomName]){
+                callback('Room already exists');
+                return;
+            }
+
+            callback('Room created');
+            this.rooms[roomName] = new Room(this, roomName, this.io, socket);
             socket.emit('joinedRoom', roomName);
-            foundRoom = roomName;
+            this.rooms[roomName].addClient(socket, true);
             console.log(`Created new room: ${roomName}`);
         });
+
+        socket.on('joinGame', (roomName, callback) => {
+            // check if socket is already hosting a room
+            if (this.rooms[roomName] && this.rooms[roomName].host === socket){
+                callback('You are already hosting this room');
+                return;
+            }
+
+            else if(this.rooms[roomName]){
+                this.rooms[roomName].addClient(socket, false);
+                callback('Joined room');
+            } else{
+                callback('Room does not exist');
+            }
+        });
+
     }
 
     disconnect(socket){
+        socket.off('disconnect', this.disconnect);
         for(const room in this.rooms){
             if(this.rooms[room].clients[socket.id]){
-                this.rooms[room].removeClient(socket);
+                if (this.rooms[room].host === socket){
+                    this.rooms[room].removeClient(socket);
+                    delete this.rooms[room];
+                } else{
+                    this.rooms[room].removeClient(socket);
+                }
             }
         }
     }

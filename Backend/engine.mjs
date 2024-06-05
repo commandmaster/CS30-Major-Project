@@ -12,7 +12,6 @@ const __dirname = import.meta.dirname;
 class ScriptLoader{
     static getAssetConfig(){
         return new Promise(async (resolve, reject) => {
-
             const assetConfigPath = path.join(__dirname, "../",  "/public/assets/assetConfig.json");
             const data = await fsPromises.readFile(assetConfigPath, "utf-8")
             resolve(JSON.parse(data));
@@ -53,6 +52,15 @@ class BE_Enity{
         this.rb = null;
 
         this.engine.addBE_Enity(name, this);
+
+        this.currentAnim = null;
+        this.currenFrame = 0;
+    }
+
+    updateEntityState(decodedEntityPacket){
+        // update the entity with the new state
+        if (decodedEntityPacket.animationData !== undefined) this.currentAnim = decodedEntityPacket.animationData.currentAnim;
+        if (decodedEntityPacket.animationData !== undefined) this.currentFrame = decodedEntityPacket.animationData.frame;
     }
 
     addRigidBody({position, rotation, mass, bounce, colliders}){
@@ -68,14 +76,77 @@ class BE_Enity{
     }
 }
 
+class BE_Input{
+    constructor(name, defaultValue = 0){
+        this.defaultValue = defaultValue;
+        this.name = name;
+        this.value = defaultValue;
+        this.pressed = false;
+    }
+
+    inputDown(value){
+        this.value = value;
+        this.pressed = true;
+    }
+
+    inputUp(value){
+        this.value = value;
+        this.pressed = false;
+    }
+}
+
+
+class BE_Player extends BE_Enity{
+    constructor(engine, name){
+        super(engine, name);
+
+        this.inputs = {}
+    }
+
+    addInput(inputName, defaultValue = false){
+        this.inputs[inputName] = new BE_Input(inputName, defaultValue);
+    }
+
+    inputDown(inputName, value){
+        this.inputs[inputName].inputDown(value);
+    }
+
+    inputUp(inputName, value){
+        this.inputs[inputName].inputUp(value);
+    }
+
+    isPressed(inputName){
+        return this.inputs[inputName].value !== this.inputs[inputName].defaultValue;
+    }
+
+    getInput(inputName){
+        return this.inputs[inputName].value;
+    }
+
+    alreadyPressed(inputName){
+        return this.inputs[inputName].pressed;
+    }
+
+    start(){
+        
+    }
+
+    update(dt){
+        
+    }
+}
+
 
 
 export class Engine {
     static BE_Enity = BE_Enity;
+    static BE_Player = BE_Player;
+    static BE_Input = BE_Input;
 
-    constructor(io) {
+    constructor(io, room) {
         this.modules = {};
         this.io = io;
+        this.room = room;
 
         this.dt = 0;
         this.lastUpdate = performance.now();
@@ -90,8 +161,8 @@ export class Engine {
     }
 
     #loadModules() {
+        this.allModulesLoaded = false;
         return new Promise(async (resolve, reject) => {
-            this.modules.networkManager = new NetworkManager(this, this.io);
             this.modules.physicsModule = new PhysicsModule(this);
 
             this.scriptModules = await ScriptLoader.loadScripts();
@@ -111,8 +182,35 @@ export class Engine {
                 }
             }
 
+            this.allModulesLoaded = true;
             resolve(this.modules);
         });
+    }
+
+    onConnection(socket){
+        const moduleTimeOutId = setTimeout(() => {
+            if (this.allModulesLoaded){
+                for (let module in this.modules){
+                    if (typeof this.modules[module].onConnection === "function"){
+                        this.modules[module].onConnection(socket);
+                    }
+                }
+                clearTimeout(moduleTimeOutId);
+            }
+        }, 50);
+    }
+
+    onDisconnection(socket){
+       const moduleTimeOutId = setTimeout(() => {
+            if (this.allModulesLoaded){
+                for (let module in this.modules){
+                    if (typeof this.modules[module].onDisconnection === "function"){
+                        this.modules[module].onDisconnection(socket);
+                    }
+                }
+                clearTimeout(moduleTimeOutId);
+            }
+        }, 50); 
     }
 
     addBE_Enity(name, BE_Enity){

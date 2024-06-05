@@ -18,8 +18,8 @@ export class NetworkingModule extends Module {
         super(engineAPI);
     }
 
-    connectToServer(){
-        this.socket = io('http://localhost:3000');
+    connectToServer(ip = 'http://localhost:3000') {
+        this.socket = io(ip);
         return new Promise((resolve, reject) => {
             const timeoutLength = 5000;
             setTimeout(() => {
@@ -28,6 +28,11 @@ export class NetworkingModule extends Module {
 
             this.socket.on('connect', () => {
                 resolve(this.socket);
+            });
+
+
+            this.socket.on('disconnect', () => {
+                location.reload();
             });
         });
     }

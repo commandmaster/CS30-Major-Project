@@ -85,6 +85,10 @@ export class Level{
         this.alreadyStarted.add(entity);
     }
 
+    getEntity(name){
+        return this.entities.find(entity => entity.name === name);
+    }
+
     start(){
         this.levelManager.Start();
         for(let entity of this.entities){
