@@ -15,10 +15,12 @@ const localIP = "localhost"; // temporary fix for testing purposes
 
 console.log(__dirname);
 const publicPath = path.join(__dirname, "..", "public"); // Path to the public folder containing the client-side code
-
+const mapsPath = path.join(__dirname, 'maps'); // Path to the maps folder containing the map files
 
 // Serve the public folder and the Modules folder
 app.use(express.static(publicPath));
+app.use(express.static(mapsPath));
+
 
 
 // Set the app to listen on the port and IP

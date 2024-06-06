@@ -215,10 +215,10 @@ class Entity {
         });
     }
 
-    toJson() {
+    serialize() {
         let serizedComponents = {};
         this.components.forEach((component, key) => {
-            serizedComponents[key] = component.toJSON();
+            serizedComponents[key] = component.serialize();
         });
         return serizedComponents;
     }

@@ -61,13 +61,18 @@ export class Component {
         // Update the component
     }
 
-    toJSON() {
+    serialize() {
         // By default the component is serialized as a JSON string
         // We can't use the default replacer function because it will cause a circular reference error with the entity, parentModule, and engineAPI, we only want to serialize the componentConfig
         function replacer(key, value) {
             // Check if the value is an instance of the component
             const bannedProperties = ["entity", "parentModule", "engineAPI"]; // Properties that should not be serialized
             const acceptable = !bannedProperties.includes(key); // Check if the key is not in the banned properties
+
+            if (key === "parentModule" || key === "engineAPI" || key === "entity") {
+                // double check becuase the first check sometimes doesn't work for some reason :)))
+                return undefined; // Return undefined if the key is in one of the banned properties
+            }
 
             return acceptable ? value : undefined; // Return the value if it is acceptable, otherwise return undefined
         }

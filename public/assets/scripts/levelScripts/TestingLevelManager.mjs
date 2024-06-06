@@ -25,6 +25,8 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
         newEntity.createComponent({rigidBody: rb, type: "rigidbody"});
 
+        console.log(newEntity.serialize());
+
         this.level.addEntity(newEntity);
 
         inputModule.addKeyboardInput('horizontal', 'axis').addKeybind('a', -1).addKeybind('d', 1);
@@ -115,6 +117,25 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                     });
                     this.level.addEntity(entity);
                 });
+
+
+                // load the map entities
+                const serializedMapEntities = fetch('defaultStage.json').then((response) => {
+                    return response.json();
+                }).then((data) => {
+                    const entityApi = this.engineAPI.getAPI("entity");
+                    for (const entityID in data.frontendEntities){
+                        const entityData = data.frontendEntities[entityID];
+                        const serializedEntity = entityData.serializedEntity;
+                        const entity = new EntityAPI.Entity.fromJSON(entityApi, serializedEntity, {
+                            position: new Physics.Vec2(entityData.position.x, entityData.position.y), 
+                            rotation: entityData.rotation, 
+                            velocity: new Physics.Vec2(entityData.velocity.x, entityData.velocity.y)
+                        });
+
+                        this.level.addEntity(entity);
+                    }
+                });
             });
         }
         catch (err) {
@@ -123,7 +144,6 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
 
     }
-
 
     Update() {
 
