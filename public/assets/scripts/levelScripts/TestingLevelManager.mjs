@@ -118,6 +118,29 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
                     this.level.addEntity(entity);
                 });
 
+                const player2 = new EntityAPI.Entity(entityAPI, "player2");
+                const rb2 = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, 1, 1, []);
+                const collider2 = new Physics.CircleCollider(rb2, 0, 0, 1, 10);
+                rb2.addCollider(collider2);
+                player2.createComponent({rigidBody: rb2, type: "rigidbody"});
+                this.level.addEntity(player2);
+
+                
+
+                const physEngine = this.engineAPI.getModule("physics").physicsEngine;
+
+                const floorRB = new Physics.Rigidbody(new Physics.Vec2(0, 1000), 0, 1, 1, []);
+                const floorCollider = new Physics.ConvexCollider(floorRB, 0, 0, 0, Infinity, [new Physics.Vec2(0, 0), new Physics.Vec2(1000, 0), new Physics.Vec2(1000, 1000), new Physics.Vec2(0, 1000)]);
+                floorRB.addCollider(floorCollider);
+                
+
+                console.log(physEngine)
+
+                physEngine.addRigidbody(floorRB);
+  
+            
+
+
 
                 // load the map entities
                 const serializedMapEntities = fetch('defaultStage.json').then((response) => {
@@ -164,7 +187,11 @@ export class Backend{
     preload(){
         return new Promise((resolve, reject) => {
             // create the map and send the associated entities to the clients 
-            
+            const floor = new this.engine.constructor.BE_Enity(this.engine, 'floor'); 
+            floor.addRigidBody({position: new Physics.Vec2(0, -1000), rotation: 0, mass: 1, bounce: 1, colliders: []});
+            floor.rb.addCollider(new Physics.RectangleCollider(floor.rb, 0, 1000, 0, 0, 1000, 1000));
+            console.log('floor', floor);
+    
 
             resolve();
         });
@@ -182,6 +209,8 @@ export class Backend{
 
         console.log(this.engine.modules.physicsModule.physicsEngine.rigidBodies);
 
+        // create the map by sending createEntity messages/packets to the client
+       
 
     }
 

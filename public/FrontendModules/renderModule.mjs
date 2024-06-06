@@ -48,15 +48,40 @@ class Camera{
 class AnimatorComponent extends Component{
     constructor(entity, parentModule, engineAPI, componentConfig){
         super(entity, parentModule, engineAPI, componentConfig);
+
+        this.animations = {};
+        this.currentAnimation = null;
     }
+
+    createAnimation(name, spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
+        this.animations[name] = new Animation(spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate);
+    }
+
+    playAnimation(animation){
+        this.currentAnimation = this.animations[animation];
+        this.currentAnimation.frameIndex = 0;
+    }
+
+    render(x, y){
+        const renderFunc = (canvas, ctx) => {
+            this.currentAnimation.render(ctx, x, y);
+        }
+
+        const renderTask = new RenderTask(renderFunc);
+        this.engineAPI.getAPI('render').addTask(renderTask);
+    }
+
+    update(dt){
+        if(typeof this.currentAnimation !== 'null' && typeof this.currentAnimation !== 'undefined'){
+            this.currentAnimation.render();
+        }
+    }
+
 }
 
 class Animation{
     #lastFrameUpdate;
-    constructor(context, canvas, spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
-        this.ctx = context;
-        this.canvas = canvas;
-
+    constructor(spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
         this.spriteSheet = new Image();
         this.spriteSheet.src = spriteSheetPath;
 
@@ -70,14 +95,14 @@ class Animation{
         this.frameIndex = 0;
     }
 
-    render(x, y){
+    render(ctx, x, y){
         const now = performance.now();
         if(now - this.#lastFrameUpdate > 1000 / this.frameRate){
             this.frameIndex = (this.frameIndex + 1) % this.frameCount;
             this.#lastFrameUpdate = now;
         }
         
-        this.ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, x, y, this.frameWidth, this.frameHeight);
+        ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, x, y, this.frameWidth, this.frameHeight);
     }
 }
 
