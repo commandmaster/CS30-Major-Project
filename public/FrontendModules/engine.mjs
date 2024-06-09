@@ -86,6 +86,8 @@ export class Level{
     }
 
     getEntity(name){
+        // Get an entity by name
+        // Returns the entity if it exists, otherwise returns undefined
         return this.entities.find(entity => entity.name === name);
     }
 

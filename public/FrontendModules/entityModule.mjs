@@ -187,10 +187,10 @@ class Entity {
         if (entityPacket.physicsData !== undefined) {
             const rigidBody = this.getComponent('rigidbody');
             if (rigidBody !== undefined){
-                rigidBody.rigidBody.position.lerpTowards(new Vec2(entityPacket.physicsData.position.x, entityPacket.physicsData.position.y), 0.2);
+                rigidBody.rigidBody.position = new Vec2(entityPacket.physicsData.position.x, entityPacket.physicsData.position.y);
                 rigidBody.rigidBody.rotation = entityPacket.physicsData.rotation;
-                rigidBody.rigidBody.velocity.lerpTowards(new Vec2(entityPacket.physicsData.velocity.x, entityPacket.physicsData.velocity.y), 0.2);
-                rigidBody.rigidBody.acceleration.lerpTowards(new Vec2(entityPacket.physicsData.acceleration.x, entityPacket.physicsData.acceleration.y), 0.2);
+                rigidBody.rigidBody.velocity = new Vec2(entityPacket.physicsData.velocity.x, entityPacket.physicsData.velocity.y);
+                rigidBody.rigidBody.acceleration = new Vec2(entityPacket.physicsData.acceleration.x, entityPacket.physicsData.acceleration.y);
                 rigidBody.rigidBody.angularVelocity = entityPacket.physicsData.angularVelocity;
             }
             else {
@@ -233,6 +233,8 @@ class Entity {
         if (position instanceof Vec2 && newEntity.components.transform) newEntity.components.transform.position = position;
         if (rotation instanceof Number && newEntity.components.transform) newEntity.components.transform.rotation = rotation;
         if (velocity instanceof Vec2 && newEntity.components.rigidbody) newEntity.components.rigidbody.velocity = velocity;
+
+        return newEntity;
     }
 }
 

@@ -390,22 +390,6 @@ class Vec2{
 
     /**
      * 
-     * @param {Vec2} v The vector to lerp towards 
-     * @param {Number} t The interpolation value 
-     * @returns {Vec2} This vector after interpolation 
-     * @memberof Vec2 
-     * @description Linearly interpolate this vector towards another vector 
-     */
-    lerpTowards(v, t){
-        // Linearly interpolate this vector towards another vector
-        this.#x = this.#x + (v.x - this.#x) * t;
-        this.#y = this.#y + (v.y - this.#y) * t;
-
-        return this;
-    }
-
-    /**
-     * 
      * @returns {Vec2} A clone/copy of this vector
      * @memberof Vec2
      * @description Create a clone/copy of this vector
@@ -431,17 +415,40 @@ class Vec2{
 
     /**
      * 
-     * @param {Number} [precision=2] The number of decimal places to round the values to 
-     * @returns {Object} The serialized version of this vector
+     * @param {Number} [precision=2] The number of decimal places to round the values to
+     * @returns {String} The string representation of this vector
      * @memberof Vec2
-     * @description Serialize this vector to a object with a a specified number of decimal places for the x and y values
-     */
-    toFixed(precision){
-        // Alias method for serialize
+     * @description Convert this vector to a string with a specified number of decimal places for the x and y values
+     * @example
+     * const vec = new Vec2(1.23456, 2.34567);
+     * console.log(vec.toFixed(2)); // Output: {x: 1.23, y: 2.35}
+     * console.log(vec.toFixed(3)); // Output: {x: 1.235, y: 2.346}
+    */
+    toFixed(precision=2){
+        // Alias for serialize
 
         // Serialize this vector
         return this.serialize(precision);
-    }   
+    }
+
+    /**
+     * 
+     * @param {Vec2} v The vector to lerp towards
+     * @param {Number} t The interpolation value
+     * @memberof Vec2
+     * @description Linearly interpolate between this vector and another vector
+     * @example
+     * const vec1 = new Vec2(0, 0);
+     * const vec2 = new Vec2(100, 100);
+     * vec1.lerpTowards(vec2, 0.5);
+     * 
+     * console.log(vec1); // Output: {x: 50, y: 50}
+    */
+    lerpTowards(v, t){
+        // Linearly interpolate between this vector and another vector
+        this.#x = this.#x + (v.x - this.#x) * t;
+        this.#y = this.#y + (v.y - this.#y) * t;
+    }
 
     #calculateMag(){
         // Pythagorean theorem to calculate the magnitude of the vector
@@ -527,10 +534,12 @@ class ConvexCollider{
         this.#calculateVertices(); // Calculate the vertices of the collider
 
         this.boundingBox = this.#precomputeBoundingBox(); // Bounding box of the collider
-        //this.boundingBox = new BoundingBox(this.#position, 0, 0); // Bounding box of the collider
+
         this.refresh(); // Refresh the collider (calculate the world position and vertices
 
         this.type = 'convex'; // Type of the collider
+
+        this.boundingBox = this.#precomputeBoundingBox(); // Bounding box of the collider
     }
 
     addVertex(vertex){
@@ -580,15 +589,17 @@ class ConvexCollider{
 
     #precomputeBoundingBox(){
         if (this.rigidBody.mass === 0 || this.rigidBody.mass === Infinity || this.rigidBody.isStatic === true) {
+            const nonMovableBoundingBox = new BoundingBox(this.#position.clone(), 0, 0);
+
             // find min and max x and y values of the vertices
             let minX = Infinity;
             let minY = Infinity;
             let maxX = -Infinity;
             let maxY = -Infinity;
 
-            for (let i = 0; i < this.#rotatedVertices.length; i++){
-                const vertex = this.#rotatedVertices[i];
-                const vertexPosition = Vec2.add(vertex, this.#position);
+            for (let i = 0; i < this.vertices.length; i++){
+                const vertex = this.vertices[i];
+                const vertexPosition = vertex;   
                 minX = Math.min(minX, vertexPosition.x);
                 minY = Math.min(minY, vertexPosition.y);
                 maxX = Math.max(maxX, vertexPosition.x);
@@ -598,7 +609,13 @@ class ConvexCollider{
             const width = maxX - minX;
             const height = maxY - minY;
 
-            return new BoundingBox(this.#position.clone(), width, height);
+            nonMovableBoundingBox.width = width;
+            nonMovableBoundingBox.height = height;
+
+            nonMovableBoundingBox.position = new Vec2(minX, minY);
+            console.log(nonMovableBoundingBox);
+
+            return nonMovableBoundingBox;
         }
 
 
@@ -645,8 +662,10 @@ class ConvexCollider{
         this.rotation = this.rigidBody.rotation; // Set the rotation of the collider to the rotation of the rigidbody
         this.#calculateWorldPosition(); // Calculate the world position of the collider
         this.#calculateVertices(); // Calculate the vertices of the collider
-        
-        this.#calculateBoundingBox(); // Calculate the bounding box of the collider
+
+        if ((!this.rigidBody.isStatic && this.rigidBody.mass !== 0 && this.rigidBody.mass !== Infinity)){
+            this.#calculateBoundingBox(); // Calculate the bounding box of the collider
+        }
     }
 
 
@@ -720,7 +739,7 @@ class CircleCollider{
 
 class Rigidbody{
     #velocity = new Vec2(0, 0); // Linear velocity
-    #acceleration = new Vec2(0, 70); // Linear acceleration
+    #acceleration = new Vec2(0, 120); // Linear acceleration
     #angularVelocity = 0; // Angular velocity
     #angularAcceleration = 0; // Angular acceleration
     #angularDrag = 0.001; // Angular drag
@@ -731,7 +750,7 @@ class Rigidbody{
     #bounce = 0.5; // Coefficient of restitution (bounciness) of the rigidbody
     #angularCollisionDamping = 0.1; // Angular collision damping
     #colliders = []; // Colliders attached to the rigidbody
-    #inertiaTensor = 80000; // Inertia tensor of the rigidbody
+    #inertiaTensor = 100000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
 
     #actingForces = []; // Forces acting on the rigidbody
@@ -1167,6 +1186,8 @@ class SAT{
     // Separating Axis Theorem - Used for collision detection between convex shapes - Theory learned at https://dyn4j.org/2010/01/sat/
     static checkPolyToPoly(collider1, collider2, debug=false){
         // Ignore colliders not in bounds 
+
+        // There is a error with the calculation of the bounding box 
         if (AABB.checkCollision(collider1.boundingBox, collider2.boundingBox) === false) return false; // Return false if there is no overlap
 
 
@@ -1696,4 +1717,5 @@ class PhysicsEngine{
 }
 
 export {PhysicsEngine, Vec2, BoundingBox, CircleCollider, RectangleCollider, TriangleCollider, ConvexCollider, Rigidbody};
+
 

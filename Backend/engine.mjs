@@ -43,7 +43,7 @@ class ScriptLoader{
     }
 }
 
-class BE_Enity{
+class BE_Entity{
     constructor(engine, name){
         this.engine = engine;
         this.BE_PhysicsModule = engine.modules.physicsModule;
@@ -51,7 +51,7 @@ class BE_Enity{
         this.name = name;
         this.rb = null;
 
-        this.engine.addBE_Enity(name, this);
+        this.engine.addBE_Entity(name, this);
 
         this.currentAnim = null;
         this.currenFrame = 0;
@@ -96,7 +96,7 @@ class BE_Input{
 }
 
 
-class BE_Player extends BE_Enity{
+class BE_Player extends BE_Entity{
     constructor(engine, name){
         super(engine, name);
 
@@ -139,7 +139,7 @@ class BE_Player extends BE_Enity{
 
 
 export class Engine {
-    static BE_Enity = BE_Enity;
+    static BE_Entity = BE_Entity;
     static BE_Player = BE_Player;
     static BE_Input = BE_Input;
 
@@ -213,8 +213,8 @@ export class Engine {
         }, 50); 
     }
 
-    addBE_Enity(name, BE_Enity){
-        this.BE_Enities[name] = BE_Enity;
+    addBE_Entity(name, BE_Entity){
+        this.BE_Enities[name] = BE_Entity;
     }
 
     deleteEntity(name){
