@@ -16,6 +16,9 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, 1, 0.1, [])
         rigidBody.addCollider(new Physics.CircleCollider(rigidBody, 70, 120, 1,70))
 
+        
+
+
         player.createComponent({"type": "rigidbody", "rigidBody": rigidBody});
         player.createComponent({"type": "scripting", "scriptNames": ["Movement"]});
         player.createComponent({"type": "animator"});
@@ -23,8 +26,6 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const assaultRifle = new EntityAPI.Entity(entityAPI, 'assaultRifle');
         assaultRifle.createComponent({"type": "animator"});
         assaultRifle.createComponent({"type": "scripting", "scriptNames": ["Gun"]});
-
-        
 
         const animator = player.components.get('animator')
         animator.createAnimation('idle', "./assets/spriteSheets/playerAnims.png", 1056/8, 192, 8, 10)
@@ -41,6 +42,8 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         groundRigidBody.addCollider(new Physics.RectangleCollider(groundRigidBody, 0, 0, 0, 1, 3000, 200))
         ground.createComponent({"type": "rigidbody", "rigidBody": groundRigidBody})
         this.level.addEntity(ground)
+
+        const groundRB = ground.components.get('rigidbody').rigidBody;
 
     }
 

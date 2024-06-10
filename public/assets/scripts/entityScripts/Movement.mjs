@@ -9,6 +9,9 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
     }
 
     Start() {
+        this.canResetJump = true;
+        this.canPlayerJump = true;
+
         const inputAPI = this.engineAPI.getAPI("input");
         const inputModule = this.engineAPI.getModule("input");
 
@@ -19,13 +22,32 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         rigidBody.acceleration = new Physics.Vec2(0, 2600); // Gravity
         rigidBody.linearDrag = 0.1;
         rigidBody.ignoreVerticalDrag = true;
+
+        const groundCheckCollider = new Physics.CircleCollider(rigidBody, 70, 200, 0.000001, 15);
+        groundCheckCollider.isTrigger = true;
+    
+        groundCheckCollider.tags.add('groundCheck');
+        rigidBody.addCollider(groundCheckCollider);
+
+
+        rigidBody.onCollisionEnterFunc = (rigidbody, collisionData, otherbody) => {
+            if (collisionData.collider1.tags.has('groundCheck') || collisionData.collider2.tags.has('groundCheck')){
+                if (this.canResetJump) this.canPlayerJump = true;
+            }
+        }
+
+       
     }
 
     Update() {
+
+
         const inputAPI = this.engineAPI.getAPI("input");
         const rigidbody = this.entity.getComponent("rigidbody");
-
         const rb = rigidbody.rigidBody;
+
+        console.log(rb.currentCollisions)
+
 
         if (inputAPI.getKeyboardInput("horizontal") > 0.1){
             const animation = this.entity.components.get("animator").currentAnimation;
@@ -44,7 +66,8 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         this.entity.getComponent("rigidbody").rigidBody.applyImpulse(new Physics.Vec2(inputAPI.getKeyboardInput("horizontal") * acceleration, 0));
         this.entity.getComponent("rigidbody").rigidBody.velocity.x = MathPlus.clamp(this.entity.getComponent("rigidbody").rigidBody.velocity.x, -maxSpeed, maxSpeed);
 
-        if (inputAPI.getInputDown("jump")){
+        if (inputAPI.getInputDown("jump") && this.canPlayerJump){
+            this.canPlayerJump = false;
             rb.velocity.y = 0;
             rb.applyImpulse(new Physics.Vec2(0, -jumpForce));
         }

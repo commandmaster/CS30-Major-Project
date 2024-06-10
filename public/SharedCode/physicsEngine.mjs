@@ -539,6 +539,8 @@ class ConvexCollider{
         this.#rotatedVertices = []; // the vertices of the collider after rotation
         this.mass = mass; // Mass of the collider
 
+        this.tags = new Set(); // Tags of the collider
+
         this.isTrigger = false; // Is the collider a trigger
 
         this.offset = new Vec2(offsetX, offsetY); // Offset of the collider from the center of the rigidbody
@@ -718,11 +720,13 @@ class TriangleCollider extends ConvexCollider{
 class CircleCollider{
     constructor(rigidBody, offsetX, offsetY, mass, radius){
         this.rigidBody = rigidBody;
-        this.offset = new Vec2(offsetX, offsetY);
+        this.offset = new Vec2(offsetX, offsetY); // Offset of the collider from the center of the rigidbody
         this.mass = mass;
         this.radius = radius;
-        this.type = 'circle';
-        this.isTrigger = false;
+        this.type = 'circle'; // Type of the collider
+        this.isTrigger = false; // Is the collider a trigger
+
+        this.tags = new Set(); // Tags of the collider
 
         this.refresh();
         this.boundingBox = new BoundingBox(Vec2.sub(this.position, new Vec2(this.radius, this.radius)), this.radius * 2, this.radius * 2);
@@ -775,6 +779,8 @@ class Rigidbody{
         this.#mass = mass;
         this.#bounce = bounce; // Coefficient of restitution (bounciness) of the rigidbody, 0 = no bounce, 1 = perfect bounce,  1 < = gain energy
         this.#colliders = colliders; // Must be an array of collider export class instances
+
+        this.currentCollisions = new Set(); // Current collisions of the rigidbody
 
         this.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {};
         this.onCollisionExitFunc = (rigidBody, collisionData, otherBody) => {};
@@ -843,6 +849,7 @@ class Rigidbody{
     addCollider(collider){
         this.#colliders.push(collider);
         this.#calculateTransform();
+        return collider;
     }
 
     onCollisionEnter(collisionData, otherBody){
@@ -1612,6 +1619,7 @@ class PhysicsEngine{
         dt = Math.min(dt, this.#maxTimeStep/1000); // Clamp the delta time to the maximum time step
 
         for (const rigidbody of this.rigidBodies){
+            rigidbody.currentCollisions.clear();
             rigidbody.stepSimulation(dt);
         }
 
@@ -1704,6 +1712,9 @@ class PhysicsEngine{
             this.currentlyColliding.push({r1, r2, collisionData});
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
+            
+            r1.currentCollisions.add({r2, collisionData});
+            r2.currentCollisions.add({r1, collisionData});
 
             if (!(p1.isTrigger || p2.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
 
@@ -1719,6 +1730,9 @@ class PhysicsEngine{
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
 
+            r1.currentCollisions.add({r2, collisionData});
+            r2.currentCollisions.add({r1, collisionData});
+
             if (!(p.isTrigger || c.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
 
             r1.onCollisionExit(collisionData, r2);
@@ -1732,6 +1746,9 @@ class PhysicsEngine{
             this.currentlyColliding.push({r1, r2, collisionData});
             r1.onCollisionEnter(collisionData, r2);
             r2.onCollisionEnter(collisionData, r1);
+
+            r1.currentCollisions.add({r2, collisionData});
+            r2.currentCollisions.add({r1, collisionData});
 
             if (!(c.isTrigger || p.isTrigger)) CollisionSolver.resolveCollision(r1, r2, collisionData);
             
