@@ -5,6 +5,10 @@ export class InputAPI extends ModuleAPI {
         super(engineAPI);
     }
 
+    getMousePosition(){
+        return this.engineAPI.getModule('input').mousePosition;
+    }
+
     getKeyboardInput(name){
         return this.engineAPI.getModule('input').keyboardInputs[name].value;
     }
@@ -65,6 +69,8 @@ export class InputModule extends Module {
     }
 
     async preload() {
+        this.mousePosition = {x: 0, y: 0};
+
         this.keyboardInputs = {};
         this.mouseInputs = {};
 
@@ -124,6 +130,10 @@ export class InputModule extends Module {
                     }
                 }
             }
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            this.mousePosition = {x: event.clientX, y: event.clientY};
         });
 
         window.addEventListener('gamepadconnected', (event) => {

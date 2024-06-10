@@ -5,6 +5,16 @@
         "name": "playerAnims"
     },
     {
+        "type": "image",
+        "path": "/assets/spriteSheets/assaultShot.png",
+        "name": "assaultShot"
+    },
+    {
+        "type" : "image",
+        "path" : "/assets/spriteSheets/assaultIdle.png",
+        "name" : "assaultIdle"
+    },
+    {
         "name": "testLevel",
         "type": "script",
         "subType": "levelManager",
@@ -14,6 +24,12 @@
         "name": "Movement",
         "type": "script",
         "path": "/assets/scripts/entityScripts/Movement.mjs",
+        "subType": "entity"
+    },
+    {
+        "name": "Gun",
+        "type": "script",
+        "path": "/assets/scripts/entityScripts/Gun.mjs",
         "subType": "entity"
     }
 ]

@@ -55,6 +55,8 @@ class AnimatorComponent extends Component{
 
     createAnimation(name, spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
         this.animations[name] = new Animation(spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate);
+        this.animations[name].name = name;  
+        return this.animations[name];
     }
 
     playAnimation(animation){
@@ -62,9 +64,13 @@ class AnimatorComponent extends Component{
         this.currentAnimation.frameIndex = 0;
     }
 
-    render(x, y){
+    getAnimation(name){
+        return this.animations[name];
+    }
+
+    render(x, y, angle = 0){
         const renderFunc = (canvas, ctx) => {
-            if (this.currentAnimation !== null) this.currentAnimation.render(ctx, x, y);
+            if (this.currentAnimation !== null) this.currentAnimation.render(ctx, x, y, angle);
         }
 
         const renderTask = new RenderTask(renderFunc);
@@ -73,12 +79,15 @@ class AnimatorComponent extends Component{
 
     update(dt){
         const transform = this.entity.components.get('transform');
-        this.render(transform.position.x, transform.position.y);
+        this.render(transform.position.x, transform.position.y, transform.rotation);
     }
 
 }
 
 class Animation{
+    scale = 1; // scale of the animation
+    pivotPoint = {x: -70, y: -30}; // pivot point of the animation
+
     #lastFrameUpdate;
     constructor(spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
         this.spriteSheet = new Image();
@@ -92,17 +101,36 @@ class Animation{
 
         this.#lastFrameUpdate = performance.now();
         this.frameIndex = 0;
+
+
     }
 
-    render(ctx, x, y){
+    render(ctx, x, y, angle = 0){
         const now = performance.now();
         if(now - this.#lastFrameUpdate > 1000 / this.frameRate){
             this.frameIndex = (this.frameIndex + 1) % this.frameCount;
             this.#lastFrameUpdate = now;
         }
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.translate(-this.pivotPoint.x, -this.pivotPoint.y);
+
+        // draw the pivot point
+        ctx.fillStyle = 'red';
+        ctx.fillRect(0, 0, 5, 5);
+
+        ctx.rotate(angle * Math.PI / 180);
+        ctx.translate(this.pivotPoint.x, this.pivotPoint.y);
+
+        ctx.scale(this.scale, this.scale);
+        ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth, this.frameHeight);
+
         
-        console.log(this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, x, y, this.frameWidth, this.frameHeight);
-        ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, x, y, this.frameWidth, this.frameHeight);
+
+        ctx.restore();
+
     }
 }
 

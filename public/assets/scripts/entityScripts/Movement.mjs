@@ -1,4 +1,5 @@
 import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.mjs";
+import { MathPlus } from "../../../SharedCode/mathPlus.mjs";
 const Physics = ScriptingAPI.Physics;
 
 
@@ -12,35 +13,37 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         const inputModule = this.engineAPI.getModule("input");
 
         inputModule.addKeyboardInput("horizontal", "axis").addKeybind("a", -1).addKeybind("d", 1);
-        inputModule.addKeyboardInput("vertical", "axis").addKeybind("w", -1).addKeybind("s", 1);
+        inputModule.addKeyboardInput("jump", "bool").addKeybind(" ").addKeybind("ArrowUp");
+
+        const rigidBody = this.entity.getComponent("rigidbody").rigidBody;
+        rigidBody.acceleration = new Physics.Vec2(0, 2600); // Gravity
+        rigidBody.linearDrag = 0.1;
+        rigidBody.ignoreVerticalDrag = true;
     }
 
     Update() {
         const inputAPI = this.engineAPI.getAPI("input");
         const rigidbody = this.entity.getComponent("rigidbody");
-        console.log(inputAPI.getKeyboardInput("horizontal"));
 
-        console.log("test")
+        const rb = rigidbody.rigidBody;
+ 
+        const maxSpeed = 1050;
+        const acceleration = 175;
+        const jumpForce = 1350;
     
-        this.entity.getComponent("rigidbody").rigidBody.applyImpulse(new Physics.Vec2(inputAPI.getInputDown("horizontal") * 1000, inputAPI.getInputDown("vertical") * 1000));
+        this.entity.getComponent("rigidbody").rigidBody.applyImpulse(new Physics.Vec2(inputAPI.getKeyboardInput("horizontal") * acceleration, 0));
+        this.entity.getComponent("rigidbody").rigidBody.velocity.x = MathPlus.clamp(this.entity.getComponent("rigidbody").rigidBody.velocity.x, -maxSpeed, maxSpeed);
 
-    }
-}
-
-export class Backend{
-    constructor(BE_engine){
-        this.engine = BE_engine; // the Backend engine ran by the server
-    }
-
-    preload(){
-         
-    }
-
-    start(){
+        if (inputAPI.getInputDown("jump")){
+            rb.velocity.y = 0;
+            rb.applyImpulse(new Physics.Vec2(0, -jumpForce));
+        }
         
-    }
 
-    update(){
+        const camera = this.engineAPI.getAPI("render").getCamera();
 
+        camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
+        camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
     }
 }
+

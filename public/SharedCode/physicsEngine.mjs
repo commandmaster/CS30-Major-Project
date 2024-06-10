@@ -210,6 +210,12 @@ class Vec2{
         return Math.sqrt((v.x ** 2) + (v.y ** 2));
     }
 
+    static rotatePoint(point1, point2, angle){
+        const x = Math.cos(angle) * (point1.x - point2.x) - Math.sin(angle) * (point1.y - point2.y) + point2.x;
+        const y = Math.sin(angle) * (point1.x - point2.x) + Math.cos(angle) * (point1.y - point2.y) + point2.y;
+        return new Vec2(x, y);
+    }
+
     #x;
     #y;
     #mag;
@@ -448,6 +454,12 @@ class Vec2{
         // Linearly interpolate between this vector and another vector
         this.#x = this.#x + (v.x - this.#x) * t;
         this.#y = this.#y + (v.y - this.#y) * t;
+    }
+
+
+
+    angleTo(v){
+        return Math.atan2(v.y - this.#y, v.x - this.#x);
     }
 
     #calculateMag(){
@@ -752,6 +764,7 @@ class Rigidbody{
     #colliders = []; // Colliders attached to the rigidbody
     #inertiaTensor = 100000; // Inertia tensor of the rigidbody
     #centerOfMass = new Vec2(0, 0); // Center of mass of the rigidbody
+    #ignoreVerticalDrag = false; // Ignore vertical drag
 
     #actingForces = []; // Forces acting on the rigidbody
     constructor(position, rotation, mass, bounce, colliders){
@@ -796,7 +809,11 @@ class Rigidbody{
 
     #applyDrag(){
         // Apply drag to the rigidbody
-        this.#velocity.scale(1 - this.#linearDrag); // Apply linear drag to the velocity
+        if (!this.#ignoreVerticalDrag) this.#velocity.scale(1 - this.#linearDrag); // Apply linear drag to the velocity
+        else {
+            this.#velocity.x *= 1 - this.#linearDrag; // Apply linear drag to the x velocity
+            // Do not apply linear drag to the y velocity
+        }
         this.#angularVelocity *= 1 - this.#angularDrag; // Apply angular drag to the angular velocity
     }
 
@@ -969,7 +986,22 @@ class Rigidbody{
         return this.#angularCollisionDamping;
     }
 
- 
+    get linearDrag(){
+        return this.#linearDrag;
+    }
+
+    set linearDrag(value){
+        this.#linearDrag = value;
+    }
+
+    get ignoreVerticalDrag(){
+        return this.#ignoreVerticalDrag;
+    }
+
+    set ignoreVerticalDrag(value){
+        this.#ignoreVerticalDrag = value;
+    }
+
 }
 
 

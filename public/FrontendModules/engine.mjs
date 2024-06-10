@@ -59,6 +59,10 @@ export class EngineAPI {
             throw new Error(`Module ${module} does not exist (undefined)`);
         return this.engine.modules[module];
     }
+
+    getCurrentLevel(){
+        return this.engine.currentLevel;
+    }
 }
 
 
