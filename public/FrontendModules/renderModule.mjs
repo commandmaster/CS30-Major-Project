@@ -86,7 +86,10 @@ class AnimatorComponent extends Component{
 
 class Animation{
     scale = 1; // scale of the animation
-    pivotPoint = {x: -70, y: -30}; // pivot point of the animation
+    isFlipped = true; // flip the animation
+    pivotPoint = {x: 0, y: 0}; // pivot point of the animation
+    flipPoint = {x: 0, y: 0}; // point to flip the animation
+
 
     #lastFrameUpdate;
     constructor(spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
@@ -115,16 +118,33 @@ class Animation{
         ctx.save();
         ctx.translate(x, y);
 
+        ctx.translate(-this.flipPoint.x, -this.flipPoint.y);
+        // draw the flip point
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(0, 0, 5, 5);
+
+        if (this.isFlipped){
+            ctx.scale(-1, 1);
+        }
+
+        ctx.translate(this.flipPoint.x, this.flipPoint.y)
+
         ctx.translate(-this.pivotPoint.x, -this.pivotPoint.y);
 
         // draw the pivot point
         ctx.fillStyle = 'red';
         ctx.fillRect(0, 0, 5, 5);
 
+
         ctx.rotate(angle * Math.PI / 180);
         ctx.translate(this.pivotPoint.x, this.pivotPoint.y);
 
+
         ctx.scale(this.scale, this.scale);
+
+
+        ;
+        
         ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth, this.frameHeight);
 
         

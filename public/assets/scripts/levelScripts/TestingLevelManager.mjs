@@ -28,6 +28,8 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
         const animator = player.components.get('animator')
         animator.createAnimation('idle', "./assets/spriteSheets/playerAnims.png", 1056/8, 192, 8, 10)
+        animator.getAnimation('idle').pivotPoint = {x: -70, y: -70};
+        animator.getAnimation('idle').flipPoint = {x: -70, y: -70};
         animator.playAnimation('idle');
 
         this.level.addEntity(player);
