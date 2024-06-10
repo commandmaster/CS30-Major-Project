@@ -86,7 +86,7 @@ class AnimatorComponent extends Component{
 
 class Animation{
     scale = 1; // scale of the animation
-    isFlipped = true; // flip the animation
+    isFlipped = false; // flip the animation
     pivotPoint = {x: 0, y: 0}; // pivot point of the animation
     flipPoint = {x: 0, y: 0}; // point to flip the animation
 
