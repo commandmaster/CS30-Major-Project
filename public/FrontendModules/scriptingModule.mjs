@@ -11,7 +11,6 @@ import * as Entity from "../FrontendModules/entityModule.mjs";
 import * as Particle from "../FrontendModules/particleModule.mjs";
 import * as Input from "../FrontendModules/inputModule.mjs";
 import * as Render from "../FrontendModules/renderModule.mjs";
-import * as Networking from "../FrontendModules/networkingModule.mjs";
 import * as Audio from "../FrontendModules/audioModule.mjs";
 
 
@@ -115,15 +114,16 @@ export class ScriptingAPI extends ModuleAPI {
     static Particle = Particle;
     static Input = Input;
     static Render = Render;
-    static Networking = Networking;
     static Audio = Audio;
 
     static async loadScript(scriptPath) {
         return new Promise((resolve, reject) => {
-            import(scriptPath).then((script) => {
+            const url = new URL(scriptPath, window.location.href).href;
+
+            import(".." + scriptPath).then((script) => {
                 resolve(script.default);
             }).catch((error) => {
-                console.error(`Error loading script: ${scriptPath}`);
+                console.error(`Error loading script: ${url}`);
                 reject(error);
             });
         });

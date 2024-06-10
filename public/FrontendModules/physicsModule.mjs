@@ -25,8 +25,12 @@ export class RigidbodyComponent extends Component{
         super(entity, parentModule, engineAPI, componentConfig);
 
         this.rigidBody = componentConfig.rigidBody;
+        console.log(this.rigidBody);
+        
         const physicsEngine = this.parentModule.physicsEngine;
         physicsEngine.addRigidbody(this.rigidBody);
+
+        
 
         const transformComponent = entity.getComponent('transform');
         if (transformComponent !== undefined && transformComponent !== null && transformComponent instanceof TransformComponent){

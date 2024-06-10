@@ -64,7 +64,7 @@ class AnimatorComponent extends Component{
 
     render(x, y){
         const renderFunc = (canvas, ctx) => {
-            this.currentAnimation.render(ctx, x, y);
+            if (this.currentAnimation !== null) this.currentAnimation.render(ctx, x, y);
         }
 
         const renderTask = new RenderTask(renderFunc);
@@ -72,9 +72,8 @@ class AnimatorComponent extends Component{
     }
 
     update(dt){
-        if(typeof this.currentAnimation !== 'null' && typeof this.currentAnimation !== 'undefined'){
-            this.currentAnimation.render();
-        }
+        const transform = this.entity.components.get('transform');
+        this.render(transform.position.x, transform.position.y);
     }
 
 }
@@ -102,6 +101,7 @@ class Animation{
             this.#lastFrameUpdate = now;
         }
         
+        console.log(this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, x, y, this.frameWidth, this.frameHeight);
         ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, x, y, this.frameWidth, this.frameHeight);
     }
 }

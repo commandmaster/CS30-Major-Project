@@ -2,7 +2,6 @@ import { ModuleAPI, Module } from "./moduleBase.mjs";
 import { AssetAPI, AssetModule } from "./assetModule.mjs";
 import { AudioAPI, AudioModule } from "./audioModule.mjs";
 import { InputAPI, InputModule } from "./inputModule.mjs";
-import { NetworkingAPI, NetworkingModule } from "./networkingModule.mjs";
 import { ParticleAPI, ParticleModule } from "./particleModule.mjs";
 import { PhysicsAPI, PhysicsModule } from "./physicsModule.mjs";
 import { RenderAPI, RenderModule } from "./renderModule.mjs";

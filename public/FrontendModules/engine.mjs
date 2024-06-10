@@ -6,7 +6,6 @@ import { EntityAPI, EntityModule } from "./entityModule.mjs";
 import { AssetAPI, AssetModule } from "./assetModule.mjs";
 import { ParticleAPI, ParticleModule } from "./particleModule.mjs";
 import { ScriptingAPI, ScriptingModule } from "./scriptingModule.mjs";
-import { NetworkingAPI, NetworkingModule  } from "./networkingModule.mjs";
 import  GameManager from "../gameManager.mjs"
 
 
@@ -33,7 +32,6 @@ export class EngineAPI {
         this.APIs.asset = new AssetAPI(this);
         this.APIs.particle = new ParticleAPI(this);
         this.APIs.scripting = new ScriptingAPI(this);
-        this.APIs.networking = new NetworkingAPI(this);
     }
 
     getAPI(module) {
@@ -158,7 +156,6 @@ export class Engine {
         priorityMap.set("particle", 5);
         priorityMap.set("render", 6);
         priorityMap.set("scripting", 7);
-        priorityMap.set("networking", 8);
 
         this.sortedModules = Object.keys(this.modules).sort(
             (a, b) => priorityMap.get(a) - priorityMap.get(b)
@@ -184,7 +181,6 @@ export class Engine {
         this.modules.entity = new EntityModule(this.api);
         this.modules.particle = new ParticleModule(this.api);
         this.modules.scripting = new ScriptingModule(this.api);
-        this.modules.networking = new NetworkingModule(this.api); 
     }
 
     async loadLevel(level) {

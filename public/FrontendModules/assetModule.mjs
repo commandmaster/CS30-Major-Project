@@ -3,7 +3,11 @@ import { ModuleAPI, Module } from "./moduleBase.mjs";
 export class AssetAPI extends ModuleAPI {
     constructor(engineAPI) {
         super(engineAPI);
-        this.assetConfigPath = "/assets/assetConfig.json";
+        this.assetConfigPath = "./assets/assetConfig.json";
+    }
+
+    getImage(path) {
+        return this.engineAPI.getModule("asset").getImage(path);
     }
 }
 
@@ -15,7 +19,7 @@ export class AssetModule extends Module {
     }
 
     preload() {
-        this.#loadAllAssets("/assets/assetConfig.json");
+        this.#loadAllAssets("./assets/assetConfig.json");
     }
 
     #loadAllAssets(assetConfigPath) {
@@ -63,6 +67,7 @@ export class AssetModule extends Module {
     #loadImage(path) {
         return new Promise((resolve, reject) => {
             let image = new Image();
+            path = "." + path;
             image.src = path;
             image.onload = () => {
                 this.#assets[path] = image;
@@ -73,6 +78,7 @@ export class AssetModule extends Module {
 
     #loadAudio(path) {
         return new Promise((resolve, reject) => {
+            path = "." + path;
             let audio = new Audio(path);
             audio.addEventListener("canplaythrough", () => {
                 this.#assets[path] = audio;
@@ -90,5 +96,9 @@ export class AssetModule extends Module {
                     resolve(json);
                 });
         });
+    }
+
+    getImage(path) {
+        return this.#assets[path];
     }
 }

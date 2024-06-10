@@ -1446,12 +1446,7 @@ class SAT{
         return Vec2.dot(vertex, axis); // Dot product of the vertice and the axis (projection of the vertice onto the axis)
     }
 
-
-
-
-
 }
-
 
 
 class CollisionSolver{
