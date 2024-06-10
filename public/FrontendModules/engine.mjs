@@ -158,8 +158,8 @@ export class Engine {
         priorityMap.set("physics", 3);
         priorityMap.set("entity", 4);
         priorityMap.set("particle", 5);
-        priorityMap.set("render", 6);
-        priorityMap.set("scripting", 7);
+        priorityMap.set("scripting", 6);
+        priorityMap.set("render", 7);
 
         this.sortedModules = Object.keys(this.modules).sort(
             (a, b) => priorityMap.get(a) - priorityMap.get(b)

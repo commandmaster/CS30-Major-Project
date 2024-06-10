@@ -37,9 +37,9 @@ class ScriptingComponent extends Component {
         }
     }
 
-    update(){
+    update(dt){
         for (const script of this.scripts.values()) {
-            script.Update();
+            script.Update(dt);
         }
     }
 }

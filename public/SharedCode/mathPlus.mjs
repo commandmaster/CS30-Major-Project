@@ -148,6 +148,23 @@ export class MathPlus{
 
     /**
      * 
+     * @param {number|Number} min The minimum value of the range
+     * @param {number|Number} max The maximum value of the range
+     * @returns {number|Number} A random value within the range
+     * @memberof MathPlus
+     * @static
+     * @description Return a random value within a range
+     * @deprecated Use MathPlus.randomRange instead
+     * @see MathPlus.randomRange
+     * @see MathPlus.randomIntRange
+    */
+    static random(min, max){
+        // Return a random value within a range
+        return Math.random() * (max - min) + min;
+    }
+
+    /**
+     * 
      * @param {number|Number} value The value to map to a new range
      * @param {number|Number} inMin The minimum value of the input range
      * @param {number|Number} inMax The maximum value of the input range

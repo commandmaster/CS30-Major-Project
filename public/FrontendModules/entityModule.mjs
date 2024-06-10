@@ -201,7 +201,20 @@ class Entity {
     }
 
    start() {
-        //
+        // Sort the components so they update in the correct order
+        const priorityMap = new Map();
+        priorityMap.set("transform", 0);
+        priorityMap.set("rigidbody", 1);
+        priorityMap.set("scripting", 2);
+        priorityMap.set("spriteRenderer", 3);
+        priorityMap.set("animator", 4);
+
+        const sortedArray = Array.from(this.components).sort(
+            (a, b) => priorityMap.get(a[0]) - priorityMap.get(b[0])
+        );
+
+        this.components = new Map(sortedArray);
+
         this.components.forEach((component) => {
             component.start();
         });

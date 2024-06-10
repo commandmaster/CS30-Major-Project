@@ -1,4 +1,4 @@
-import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.mjs";
+import { ScriptingAPI } from "../../../frontendModules/scriptingModule.mjs"; 
 import { MathPlus } from "../../../SharedCode/mathPlus.mjs";
 const Physics = ScriptingAPI.Physics;
 
@@ -26,6 +26,16 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         const rigidbody = this.entity.getComponent("rigidbody");
 
         const rb = rigidbody.rigidBody;
+
+        if (inputAPI.getKeyboardInput("horizontal") > 0.1){
+            const animation = this.entity.components.get("animator").currentAnimation;
+            animation.isFlipped = false;
+        }
+
+        else if (inputAPI.getKeyboardInput("horizontal") < -0.1){
+            const animation = this.entity.components.get("animator").currentAnimation;
+            animation.isFlipped = true;
+        }
  
         const maxSpeed = 1050;
         const acceleration = 175;

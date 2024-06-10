@@ -10,8 +10,30 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
         super(engineAPI, entity);
     }
 
+    #weaponSway(){
+        const inputAPI = this.engineAPI.getAPI("input");
+        
+        const player = this.engineAPI.getCurrentLevel().getEntity("player");
+        const playerPos = player.components.get("transform").position;
+
+    }
+
+
+
     Start() {
-       console.log("Gun Start");
+        this.rotationalRecoil = 0;
+        this.verticalRecoil = 0;
+        this.rotationBeforeRecoil = 0;
+        this.verticalBeforeRecoil = 0;
+        this.timeSinceStartedShooting = 0;
+        this.rotationalRecoilSpeed = 0.3;
+        this.verticalRecoilSpeed = 0.1;
+        this.rotationMaxRecoil = 15;
+        this.verticalMaxRecoil = 5;
+
+        this.rotationalRecoilRandom = 1.25;
+        this.verticalRecoilRandom = 0.7;
+
 
         const inputAPI = this.engineAPI.getAPI("input");
         const inputModule = this.engineAPI.getModule("input");
@@ -36,7 +58,8 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
 
     }
 
-    Update() {
+    Update(dt) {
+        const assaultRifle = this.entity;
         const currentAnimation = this.entity.components.get('animator').currentAnimation;
 
         if (this.engineAPI.getAPI('input').getMouseInput("shoot") && currentAnimation.name !== 'shoot'){
@@ -51,10 +74,27 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
             assaultAnimator.playAnimation('idle');
         }
 
+        if (currentAnimation.name === 'shoot'){
+            this.timeSinceStartedShooting += dt;
+            // apply recoil to the gun
+            this.rotationalRecoil += -this.rotationalRecoilSpeed + MathPlus.randomRange(-this.rotationalRecoilRandom, this.rotationalRecoilRandom);
+            this.verticalRecoil += -this.verticalRecoilSpeed + MathPlus.randomRange(-this.verticalRecoilRandom, this.verticalRecoilRandom);
 
-        
+            this.rotationalRecoil = MathPlus.clamp(this.rotationalRecoil, -this.rotationMaxRecoil, this.rotationMaxRecoil);
+            this.verticalRecoil = MathPlus.clamp(this.verticalRecoil, -this.verticalMaxRecoil, this.verticalMaxRecoil);
 
-        const assaultRifle = this.entity; 
+        } else{
+            this.timeSinceStartedShooting = 0;
+            this.rotationalRecoil = 0;
+            this.verticalRecoil = 0;
+            this.rotationBeforeRecoil = assaultRifle.components.get('transform').rotation;
+            this.verticalBeforeRecoil = assaultRifle.components.get('transform').position.y;
+
+
+        }
+
+    
+         
         const assaultPos = assaultRifle.components.get('transform').position
 
         const player = this.engineAPI.getCurrentLevel().getEntity('player');
@@ -79,7 +119,16 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
 
         assaultRifle.components.get('transform').rotation = (currentAnimation.isFlipped ? -1 : 1) * (Math.atan2(mouseToRifle.y - assaultPos.y, mouseToRifle.x - assaultPos.x) - Math.PI/2) * 180 / Math.PI + 90;
 
+        assaultRifle.components.get('transform').rotation += this.rotationalRecoil; 
+        assaultRifle.components.get('transform').position.y += this.verticalRecoil;
+        
+
+    
+
         if (currentAnimation.name === 'shoot' && currentAnimation.frameIndex === 7){
+            
+
+
             const bullet = new EntityAPI.Entity(this.engineAPI.getAPI('entity'), 'bullet' + crypto.randomUUID());
             
             // get the rotated position of the gun barrel
@@ -98,13 +147,12 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
             bullet.getComponent('rigidbody').rigidBody.addCollider(new Physics.CircleCollider(bullet.getComponent('rigidbody').rigidBody, 0, 0, 1, 3));
 
             const bulletRb = bullet.getComponent('rigidbody').rigidBody;
-            bulletRb.velocity = Physics.Vec2.sub(mouseToRifle, bulletPos).normalize().scale(-3000);
+            bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(1000);
 
 
             const level = this.engineAPI.getCurrentLevel();
             level.addEntity(bullet);
         }
-
     }
 }
 
