@@ -93,6 +93,23 @@ export class Level{
         return this.entities.find(entity => entity.name === name);
     }
 
+    removeEntity(name){
+        // Remove an entity by name
+        // Returns the entity if it exists, otherwise returns undefined
+
+        for (let i = 0; i < this.entities.length; i++){
+            if (this.entities[i].name === name){
+                const entity = this.entities[i];
+                this.entities[i].end();
+                this.entities.splice(i, 1);
+                console.log(`Removed entity ${name}`);
+                return entity;
+            }
+        }
+
+
+    }
+
     start(){
         this.levelManager.Start();
         for(let entity of this.entities){

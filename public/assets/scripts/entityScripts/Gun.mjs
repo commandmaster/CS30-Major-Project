@@ -31,8 +31,13 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
         this.rotationMaxRecoil = 15;
         this.verticalMaxRecoil = 5;
 
-        this.rotationalRecoilRandom = 1.25;
-        this.verticalRecoilRandom = 0.7;
+        this.rotationalRecoilRandom = 10;
+        this.verticalRecoilRandom = 5;
+        this.recoilRandomInterval = 1;
+
+        this.recoilRandomTimer = 0;
+        this.recoilRandomRotationalTarget = 0;
+        this.recoilRandomVerticalTarget = 0;
 
 
         const inputAPI = this.engineAPI.getAPI("input");
@@ -76,17 +81,24 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
 
         if (currentAnimation.name === 'shoot'){
             this.timeSinceStartedShooting += dt;
-            // apply recoil to the gun
-            this.rotationalRecoil += -this.rotationalRecoilSpeed + MathPlus.randomRange(-this.rotationalRecoilRandom, this.rotationalRecoilRandom);
-            this.verticalRecoil += -this.verticalRecoilSpeed + MathPlus.randomRange(-this.verticalRecoilRandom, this.verticalRecoilRandom);
-
+            // apply recoil to the gun  
+            this.rotationalRecoil += -this.rotationalRecoilSpeed + MathPlus.lerp(this.rotationalRecoil, this.recoilRandomRotationalTarget, this.recoilRandomTimer / this.recoilRandomInterval);
+            this.verticalRecoil += -this.verticalRecoilSpeed + MathPlus.lerp(this.verticalRecoil, this.verticalRecoilRandom, this.recoilRandomTimer / this.recoilRandomInterval);
             this.rotationalRecoil = MathPlus.clamp(this.rotationalRecoil, -this.rotationMaxRecoil, this.rotationMaxRecoil);
             this.verticalRecoil = MathPlus.clamp(this.verticalRecoil, -this.verticalMaxRecoil, this.verticalMaxRecoil);
+            this.recoilRandomTimer += dt;
+
+            if (this.recoilRandomTimer >= this.recoilRandomInterval){
+                this.recoilRandomTimer = 0;
+                this.recoilRandomRotationalTarget = MathPlus.randomRange(-1, 1) * this.rotationalRecoilRandom;
+                this.recoilRandomVerticalTarget = MathPlus.randomRange(-1, 1) * this.verticalRecoilRandom;
+            }
 
         } else{
             this.timeSinceStartedShooting = 0;
             this.rotationalRecoil = 0;
             this.verticalRecoil = 0;
+            this.recoilRandomTimer = 0;
             this.rotationBeforeRecoil = assaultRifle.components.get('transform').rotation;
             this.verticalBeforeRecoil = assaultRifle.components.get('transform').position.y;
 
@@ -130,6 +142,15 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
 
 
             const bullet = new EntityAPI.Entity(this.engineAPI.getAPI('entity'), 'bullet' + crypto.randomUUID());
+            bullet.createComponent({"type":"animator"});
+            const bulletAnimator = bullet.components.get('animator');
+
+            const bulletAnim = bulletAnimator.createAnimation('bullet', './assets/spriteSheets/orangeBullet.png', 17, 12, 4, 8);
+            bulletAnim.scale = 1.5;
+            bulletAnim.pivotPoint = {x: -15, y: -8};
+            bulletAnim.offset = {x: -12, y: -6};
+            bulletAnimator.playAnimation('bullet');
+
             
             // get the rotated position of the gun barrel
             // get the translated pivot point of the gun barrel
@@ -149,10 +170,21 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
             const bulletRb = bullet.getComponent('rigidbody').rigidBody;
             const playerRb = player.components.get('rigidbody').rigidBody;
 
-            bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(2500);
-            
+            bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(2000);
+            bullet.components.get('transform').rotation = Vec2.angle(bulletRb.velocity) * 180 / Math.PI;
 
+            bulletRb.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
+                if (collisionData.collider1.tags.has('enemy') || collisionData.collider2.tags.has('enemy')){
+                    const level = this.engineAPI.getCurrentLevel();
+                    level.removeEntity(rigidBody.entity);
+                    level.removeEntity(otherBody.entity);
+                }
 
+                else {
+                    const level = this.engineAPI.getCurrentLevel();
+                    level.removeEntity(bullet.name);
+                }
+            }
 
             const level = this.engineAPI.getCurrentLevel();
             level.addEntity(bullet);

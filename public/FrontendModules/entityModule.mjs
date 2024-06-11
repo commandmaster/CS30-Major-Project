@@ -177,6 +177,12 @@ class Entity {
          return this.components.get(componentName);
     }
 
+    end() {
+        this.components.forEach((component) => {
+            if (typeof component.end === "function") component.end();
+        });
+    }
+
     updateEntityState(entityPacket){
         if (entityPacket === null || entityPacket === undefined) throw new Error("Entity packet is null or undefined!");           
 

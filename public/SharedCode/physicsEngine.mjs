@@ -210,10 +210,57 @@ class Vec2{
         return Math.sqrt((v.x ** 2) + (v.y ** 2));
     }
 
+    /**
+     * 
+     * @param {Vec2} point1 The first point to rotate
+     * @param {Vec2} point2 The second point to rotate
+     * @param {Number} angle The angle to rotate the point by
+     * @returns {Vec2} The rotated point
+     * @static
+     * @memberof Vec2
+     * @description Rotate a point around another point by a specified angle
+     * @example
+     * const point1 = new Vec2(0, 0);
+     * const point2 = new Vec2(10, 0);
+     * const rotatedPoint = Vec2.rotatePoint(point1, point2, Math.PI / 2);
+     * console.log(rotatedPoint); // Output: {x: 0, y: 10}
+     */
     static rotatePoint(point1, point2, angle){
         const x = Math.cos(angle) * (point1.x - point2.x) - Math.sin(angle) * (point1.y - point2.y) + point2.x;
         const y = Math.sin(angle) * (point1.x - point2.x) + Math.cos(angle) * (point1.y - point2.y) + point2.y;
         return new Vec2(x, y);
+    }
+
+    /**
+     * 
+     * @param {Number} angle The angle to create a forward vector from
+     * @returns {Vec2} A forward vector from the specified angle
+     * @static
+     * @memberof Vec2
+     * @description Create a forward vector from an angle
+     * @example
+     * const forwardVector = Vec2.forward(Math.PI / 2);
+     * console.log(forwardVector); // Output: {x: 0, y: 1}
+    */
+    static forward(angle){
+        // Create a forward vector from an angle
+        return new Vec2(Math.cos(angle), Math.sin(angle));
+    }
+
+    /**
+     * 
+     * @param {Vec2} v The vector to calculate the angle of
+     * @returns {Number} The angle of the vector
+     * @static
+     * @memberof Vec2
+     * @description Calculate the angle of a vector
+     * @example
+     * const vec = new Vec2(1, 1);
+     * console.log(Vec2.angle(vec)); // Output: 0.7853981633974483
+    */
+    static angle(v){
+        // Calculate the angle of a vector
+        return Math.atan2(v.y, v.x);
     }
 
     #x;

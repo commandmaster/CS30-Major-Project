@@ -48,6 +48,11 @@ export class RigidbodyComponent extends Component{
         
     }
 
+    end(){
+        const physicsEngine = this.parentModule.physicsEngine;
+        physicsEngine.deleteRigidbody(this.rigidBody);
+    }
+
     static fromJSON(entity, moduleAPI, jsonObject){
         const rigidBody = new Rigidbody(new Vec2(jsonObject.rigidBody.position.x, jsonObject.rigidBody.position.y), jsonObject.rigidBody.rotation, jsonObject.rigidBody.mass, jsonObject.rigidBody.restitution, jsonObject.rigidBody.colliders);
         for (const colliderData of jsonObject.rigidBody.colliders){

@@ -89,7 +89,7 @@ class Animation{
     isFlipped = false; // flip the animation
     pivotPoint = {x: 0, y: 0}; // pivot point of the animation
     flipPoint = {x: 0, y: 0}; // point to flip the animation
-
+    offset = {x: 0, y: 0}; // offset of the animation
 
     #lastFrameUpdate;
     constructor(spriteSheetPath, frameWidth, frameHeight, frameCount, frameRate){
@@ -117,11 +117,12 @@ class Animation{
 
         ctx.save();
         ctx.translate(x, y);
+        ctx.translate(this.offset.x, this.offset.y);
 
         ctx.translate(-this.flipPoint.x, -this.flipPoint.y);
         // draw the flip point
         ctx.fillStyle = 'blue';
-        ctx.fillRect(0, 0, 5, 5);
+        //ctx.fillRect(0, 0, 5, 5);
 
         if (this.isFlipped){
             ctx.scale(-1, 1);
@@ -133,8 +134,7 @@ class Animation{
 
         // draw the pivot point
         ctx.fillStyle = 'red';
-        ctx.fillRect(0, 0, 5, 5);
-
+        //ctx.fillRect(0, 0, 5, 5);
 
         ctx.rotate(angle * Math.PI / 180);
         ctx.translate(this.pivotPoint.x, this.pivotPoint.y);
@@ -142,12 +142,7 @@ class Animation{
 
         ctx.scale(this.scale, this.scale);
 
-
-        ;
-        
         ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth, this.frameHeight);
-
-        
 
         ctx.restore();
 
