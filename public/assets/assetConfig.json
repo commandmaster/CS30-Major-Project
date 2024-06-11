@@ -27,9 +27,9 @@
         "subType": "entity"
     },
     {
-        "name": "Gun",
+        "name": "Combat",
         "type": "script",
-        "path": "/assets/scripts/entityScripts/Gun.mjs",
+        "path": "/assets/scripts/entityScripts/Combat.mjs",
         "subType": "entity"
     }
 ]

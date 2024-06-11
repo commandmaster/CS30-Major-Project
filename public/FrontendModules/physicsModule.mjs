@@ -25,7 +25,6 @@ export class RigidbodyComponent extends Component{
         super(entity, parentModule, engineAPI, componentConfig);
 
         this.rigidBody = componentConfig.rigidBody;
-        console.log(this.rigidBody);
         
         const physicsEngine = this.parentModule.physicsEngine;
         physicsEngine.addRigidbody(this.rigidBody);
@@ -143,21 +142,25 @@ export class PhysicsModule extends Module{
     }
 
     debugDraw(){
+        const debugBoudingBox = false;
+
         for (const body of this.physicsEngine.rigidBodies){
             for (const collider of body.colliders){
 
-                const boundingBox = collider.boundingBox;
-                const renderAPI = this.engineAPI.getAPI('render');
-                const renderFunc = (canvas, ctx) => {
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'yellow';
-                    ctx.rect(boundingBox.position.x, boundingBox.position.y, boundingBox.width, boundingBox.height);
-                    ctx.stroke();
-                    ctx.closePath();
-                }
+                if (debugBoudingBox){
+                    const boundingBox = collider.boundingBox;
+                    const renderAPI = this.engineAPI.getAPI('render');
+                    const renderFunc = (canvas, ctx) => {
+                        ctx.beginPath();
+                        ctx.strokeStyle = 'yellow';
+                        ctx.rect(boundingBox.position.x, boundingBox.position.y, boundingBox.width, boundingBox.height);
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
 
-                const task = new renderAPI.constructor.RenderTask(renderFunc);
-                renderAPI.addTask(task);
+                    const task = new renderAPI.constructor.RenderTask(renderFunc);
+                    renderAPI.addTask(task);
+                }
 
 
                 if (collider.type === 'circle'){

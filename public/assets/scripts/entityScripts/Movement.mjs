@@ -1,4 +1,4 @@
-import { ScriptingAPI } from "../../../frontendModules/scriptingModule.mjs"; 
+import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.mjs"; 
 import { MathPlus } from "../../../SharedCode/mathPlus.mjs";
 const Physics = ScriptingAPI.Physics;
 
@@ -67,7 +67,6 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
             }
         }
 
-        console.log(currentCollisions)
         if (inputAPI.getInputDown("jump") && this.canPlayerJump){
             this.canPlayerJump = false;
             rb.velocity.y = 0;

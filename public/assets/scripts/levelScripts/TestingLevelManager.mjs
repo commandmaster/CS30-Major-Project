@@ -25,7 +25,7 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
         const assaultRifle = new EntityAPI.Entity(entityAPI, 'assaultRifle');
         assaultRifle.createComponent({"type": "animator"});
-        assaultRifle.createComponent({"type": "scripting", "scriptNames": ["Gun"]});
+        assaultRifle.createComponent({"type": "scripting", "scriptNames": ["Combat"]});
 
         const animator = player.components.get('animator')
         animator.createAnimation('idle', "./assets/spriteSheets/playerAnims.png", 1056/8, 192, 8, 10)

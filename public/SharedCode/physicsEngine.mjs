@@ -674,7 +674,6 @@ class ConvexCollider{
             nonMovableBoundingBox.height = height;
 
             nonMovableBoundingBox.position = new Vec2(minX, minY);
-            console.log(nonMovableBoundingBox);
 
             return nonMovableBoundingBox;
         }
