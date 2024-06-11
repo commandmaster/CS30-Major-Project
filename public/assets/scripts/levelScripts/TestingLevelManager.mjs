@@ -38,8 +38,8 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
 
         const ground = new EntityAPI.Entity(entityAPI, 'ground')
-        const groundRigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 500), 0, Infinity, 1, [])
-        groundRigidBody.addCollider(new Physics.RectangleCollider(groundRigidBody, 0, 0, 0, 1, 3000, 200))
+        const groundRigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 500), Math.PI/64, Infinity, 1, [])
+        groundRigidBody.addCollider(new Physics.RectangleCollider(groundRigidBody, 0, 0, 0, 1, 3000, 200)).tags.add('ground')
         ground.createComponent({"type": "rigidbody", "rigidBody": groundRigidBody})
         this.level.addEntity(ground)
 

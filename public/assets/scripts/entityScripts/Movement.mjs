@@ -9,7 +9,6 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
     }
 
     Start() {
-        this.canResetJump = true;
         this.canPlayerJump = true;
 
         const inputAPI = this.engineAPI.getAPI("input");
@@ -30,12 +29,7 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         rigidBody.addCollider(groundCheckCollider);
 
 
-        rigidBody.onCollisionEnterFunc = (rigidbody, collisionData, otherbody) => {
-            if (collisionData.collider1.tags.has('groundCheck') || collisionData.collider2.tags.has('groundCheck')){
-                if (this.canResetJump) this.canPlayerJump = true;
-            }
-        }
-
+    
        
     }
 
@@ -45,9 +39,6 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         const inputAPI = this.engineAPI.getAPI("input");
         const rigidbody = this.entity.getComponent("rigidbody");
         const rb = rigidbody.rigidBody;
-
-        console.log(rb.currentCollisions)
-
 
         if (inputAPI.getKeyboardInput("horizontal") > 0.1){
             const animation = this.entity.components.get("animator").currentAnimation;
@@ -66,6 +57,17 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         this.entity.getComponent("rigidbody").rigidBody.applyImpulse(new Physics.Vec2(inputAPI.getKeyboardInput("horizontal") * acceleration, 0));
         this.entity.getComponent("rigidbody").rigidBody.velocity.x = MathPlus.clamp(this.entity.getComponent("rigidbody").rigidBody.velocity.x, -maxSpeed, maxSpeed);
 
+        const currentCollisions = rb.currentCollisions; // Get the current collisions set
+
+        this.canPlayerJump = false;
+        for (let collision of currentCollisions){
+            const cData = collision.collisionData;
+            if ((cData.collider1.tags.has('groundCheck') || cData.collider2.tags.has('groundCheck')) && (cData.collider1.tags.has('ground') || cData.collider2.tags.has('ground'))){
+                this.canPlayerJump = true;
+            }
+        }
+
+        console.log(currentCollisions)
         if (inputAPI.getInputDown("jump") && this.canPlayerJump){
             this.canPlayerJump = false;
             rb.velocity.y = 0;

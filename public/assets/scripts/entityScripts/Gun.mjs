@@ -147,7 +147,11 @@ export default class Gun extends ScriptingAPI.Monobehaviour {
             bullet.getComponent('rigidbody').rigidBody.addCollider(new Physics.CircleCollider(bullet.getComponent('rigidbody').rigidBody, 0, 0, 1, 3));
 
             const bulletRb = bullet.getComponent('rigidbody').rigidBody;
-            bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(1000);
+            const playerRb = player.components.get('rigidbody').rigidBody;
+
+            bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(2500);
+            
+
 
 
             const level = this.engineAPI.getCurrentLevel();
