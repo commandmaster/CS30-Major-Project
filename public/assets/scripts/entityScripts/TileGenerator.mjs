@@ -22,10 +22,13 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         const inputModule = this.engineAPI.getModule("input");
         inputModule.addMouseInput("tileEdit").addKeybind(0);
         inputModule.addKeyboardInput("eraser").addKeybind("e");
-        inputModule.addMouseInput("removeRB").addKeybind(2);
+        inputModule.addMouseInput("selectionBox").addKeybind(2); // Create selection box to remove the physics from the tile, or change the texture
+        inputModule.addMouseInput("panCamera").addKeybind(1);
+        inputModule.addKeyboardInput("shiftRemove", "bool").addKeybind("Shift"); // Remove the physics from the tile
+        inputModule.addKeyboardInput("ctrlAdd", "bool").addKeybind("Control"); // Add the physics to the tile
 
 
-        this.editorMode = true;
+        this.editorMode = false;
 
         this.texturesPath = "./assets/textures/tileMap1.png";
         this.tileTexture = new Image();
@@ -38,7 +41,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
         this.selectionImageScale = 1;
 
-        this.worldSize = {worldXMin: -100, worldXMax: 100, worldYMin: -100, worldYMax: 100};
+        this.worldSize = {worldXMin: -300, worldXMax: 300, worldYMin: -100, worldYMax: 100};
 
         this.tileMappingPath = "./assets/textures/tileMap1.json";
         
@@ -47,6 +50,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         this.loadedCoordinates = new Set();
         this.currentEditorPiece = -1;
         this.removeStartPosition = null;
+        this.lastMousePosition = {x: 0, y: 0};
         
         // Load the tile map
         fetch(this.tileMappingPath).then(response => response.json()).then(data => {
@@ -107,11 +111,32 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             } 
         }
 
-        if (inputAPI.getInputDown("removeRB")){
+        if (inputAPI.getInputDown("panCamera")){
+            this.lastMousePosition = {x: mouseCoords.x, y: mouseCoords.y};
+        }
+        
+        if (inputAPI.getMouseInput("panCamera")){
+            const sensitivity = 1.3;
+
+            const endPan = {x: mouseCoords.x, y: mouseCoords.y};
+            const camera = this.engineAPI.getAPI("render").getCamera();
+
+            const deltaPan = {x: endPan.x - this.lastMousePosition.x, y: endPan.y - this.lastMousePosition.y};
+
+            camera.x -= deltaPan.x * sensitivity;
+            camera.y -= deltaPan.y * sensitivity;
+
+            this.lastMousePosition = {x: endPan.x, y: endPan.y};
+        }
+
+        
+
+
+        if (inputAPI.getInputDown("selectionBox")){
             this.removeStartPosition = mouseToWorld;
         }
 
-        if (this.removeStartPosition !== null && inputAPI.getMouseInput("removeRB") === false){
+        if (this.removeStartPosition !== null && inputAPI.getMouseInput("selectionBox") === false){
             const endPosition = mouseToWorld;
         
             // get tiles that are within the start and end position
@@ -121,12 +146,41 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const yMax = Math.max(this.removeStartPosition.y, endPosition.y);
 
             for (let tile of this.loadedTiles){
-                if (tile.x * this.tileGridSize > xMin && tile.x * this.tileGridSize < xMax && tile.y * this.tileGridSize > yMin && tile.y * this.tileGridSize < yMax){
-                    if (tile.noPhysics === undefined){
+                tile.x += 0.5;
+                tile.y += 0.5;
+                if ((tile.x) * this.tileGridSize > xMin && (tile.x) * this.tileGridSize < xMax && (tile.y) * this.tileGridSize > yMin && (tile.y) * this.tileGridSize < yMax){
+                    if (inputAPI.getKeyboardInput("ctrlAdd") && inputAPI.getKeyboardInput("shiftRemove")){
+                        if (tile.noPhysics === undefined){
+                            tile.noPhysics = true;
+                        }
+
+                        tile.noPhysics = !tile.noPhysics;
+                    }
+
+                    else if (inputAPI.getKeyboardInput("ctrlAdd")){
+                        if (tile.noPhysics === undefined){
+                            tile.noPhysics = false;
+                        }
+
                         tile.noPhysics = false;
                     }
-                    tile.noPhysics = !tile.noPhysics;
+
+                    else if (inputAPI.getKeyboardInput("shiftRemove")){
+                        if (tile.noPhysics === undefined){
+                            tile.noPhysics = true;
+                        }
+
+                        tile.noPhysics = true; 
+                    }
+
+                    else {
+                        tile.noPhysics = false;
+                        tile.textureCoordinate = this.currentEditorPiece;
+                    }
                 }
+
+                tile.x -= 0.5;
+                tile.y -= 0.5;
             }
 
             this.generateColliders();
@@ -175,6 +229,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
                     for (let tile of this.loadedTiles){
                         if (tile.x === x && tile.y === y){
                             tile.textureCoordinate = this.currentEditorPiece;
+                            tile.noPhysics = false;
                         }
                     }
                 }
@@ -214,6 +269,20 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const renderAPI = this.engineAPI.getAPI("render");
             const renderFunc = (canvas, ctx) => {
                 // Draw the tile at the correct position
+
+                // check if tile is in range of the camera
+                const camera = renderAPI.getCamera();
+                const cameraX = camera.x;
+                const cameraY = camera.y;
+                const cameraFrameOfView = camera.frameOfView;
+
+                const extraSpace = 100;
+
+                // Check if the tile is in the camera view
+                if (x < cameraX - cameraFrameOfView.width / 2 - extraSpace || x > cameraX + cameraFrameOfView.width / 2 + extraSpace || y < cameraY - cameraFrameOfView.height / 2 - extraSpace || y > cameraY + cameraFrameOfView.height / 2 + extraSpace){
+                    return;
+                }
+
                 
                 ctx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
 
@@ -371,7 +440,6 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
         this.tileRB = rigidBody;
 
-        console.log(rigidBody);
 
         const physModule = this.engineAPI.getModule("physics")
         physModule.addRigidbody(rigidBody);

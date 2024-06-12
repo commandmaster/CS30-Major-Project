@@ -117,14 +117,14 @@ export class PhysicsModule extends Module{
             const worldPos = camera.screenToWorld(e.clientX, e.clientY);
             
 
-            if (e.button === 1){
-                for (let i = 0; i < 100; i++){
-                    const newRB = new Rigidbody(new Vec2(worldPos.x + i * 5, worldPos.y + Math.random()*150 - 75), 0, 1, 1, []);
-                    newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
-                    this.addRigidbody(newRB);
-                }
+            // if (e.button === 1){
+            //     for (let i = 0; i < 100; i++){
+            //         const newRB = new Rigidbody(new Vec2(worldPos.x + i * 5, worldPos.y + Math.random()*150 - 75), 0, 1, 1, []);
+            //         newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
+            //         this.addRigidbody(newRB);
+            //     }
                 
-            }
+            // }
             
         });
 
@@ -181,7 +181,7 @@ export class PhysicsModule extends Module{
                 else if (collider.type === 'convex'){
                     const renderFunc = (canvas, ctx) => {
                         ctx.beginPath();
-                        ctx.strokeStyle = 'blue';
+                        ctx.strokeStyle = 'red';
                         ctx.strokeWidth = 5;
                         ctx.moveTo(collider.vertices[0].x, collider.vertices[0].y);
                         for (let i = 1; i < collider.vertices.length; i++){

@@ -12,6 +12,10 @@ class Camera{
         this.ctx = renderAPI.ctx;
         this.canvas = renderAPI.canvas;
         this.#baseResolution = renderAPI.baseResolution;
+
+        this.scale = 1;
+
+        this.frameOfView = {width: 1920, height: 1080};
     }
 
     #update(){
@@ -20,7 +24,10 @@ class Camera{
 
         
         const minScale = Math.min(this.canvas.width / this.#baseResolution.width, this.canvas.height / this.#baseResolution.height);
+        this.scale = minScale;
         this.ctx.scale(minScale, minScale);
+
+        this.frameOfView = {width: this.canvas.width / minScale, height: this.canvas.height / minScale};
 
         this.ctx.translate(-this.x, -this.y);
     }
@@ -39,6 +46,7 @@ class Camera{
 
     screenToWorld(x, y){
         const minScale = Math.min(this.canvas.width / this.#baseResolution.width, this.canvas.height / this.#baseResolution.height);
+        this.scale = minScale;
 
         const x2 = x / minScale + this.x - this.canvas.width / 2 / minScale;
         const y2 = y / minScale + this.y - this.canvas.height / 2 / minScale;
