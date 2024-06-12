@@ -166,6 +166,7 @@ export class PhysicsModule extends Module{
                 if (collider.type === 'circle'){
                     const renderFunc = (canvas, ctx) => {
                         ctx.beginPath();
+                        ctx.strokeWidth = 4;
                         ctx.strokeStyle = 'grey';
                         ctx.arc(collider.position.x, collider.position.y, collider.radius, 0, Math.PI * 2);
                         ctx.stroke();
@@ -180,7 +181,8 @@ export class PhysicsModule extends Module{
                 else if (collider.type === 'convex'){
                     const renderFunc = (canvas, ctx) => {
                         ctx.beginPath();
-                        ctx.strokeStyle = 'grey';
+                        ctx.strokeStyle = 'blue';
+                        ctx.strokeWidth = 5;
                         ctx.moveTo(collider.vertices[0].x, collider.vertices[0].y);
                         for (let i = 1; i < collider.vertices.length; i++){
                             ctx.lineTo(collider.vertices[i].x, collider.vertices[i].y);

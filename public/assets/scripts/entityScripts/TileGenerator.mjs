@@ -5,10 +5,11 @@ import { MathPlus } from "../../../SharedCode/mathPlus.mjs";
 import * as Physics from "../../../SharedCode/physicsEngine.mjs";
 
 class Tile{
-    constructor(x, y, textureCoordinate){
+    constructor(x, y, textureCoordinate, noPhysics = false){
         this.x = x;
         this.y = y;
         this.textureCoordinate = textureCoordinate;
+        this.noPhysics = noPhysics;
     }
 }
 
@@ -21,10 +22,16 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         const inputModule = this.engineAPI.getModule("input");
         inputModule.addMouseInput("tileEdit").addKeybind(0);
         inputModule.addKeyboardInput("eraser").addKeybind("e");
+        inputModule.addMouseInput("removeRB").addKeybind(2);
+
+
+        this.editorMode = true;
 
         this.texturesPath = "./assets/textures/tileMap1.png";
         this.tileTexture = new Image();
         this.tileTexture.src = this.texturesPath;
+
+        this.tileRB = null;
 
         this.tilesAcross = 32;
         this.tilesDown = 32;
@@ -39,13 +46,14 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         this.loadedTiles = [];
         this.loadedCoordinates = new Set();
         this.currentEditorPiece = -1;
+        this.removeStartPosition = null;
         
         // Load the tile map
         fetch(this.tileMappingPath).then(response => response.json()).then(data => {
             this.tileMap = data;
 
             for (let tile of this.tileMap.tiles){
-                this.loadedTiles.push(new Tile(tile.x, tile.y, tile.textureCoordinate));
+                this.loadedTiles.push(new Tile(tile.x, tile.y, tile.textureCoordinate, tile.noPhysics));
                 this.loadedCoordinates.add(`${tile.x},${tile.y}`);
             }
 
@@ -99,6 +107,34 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             } 
         }
 
+        if (inputAPI.getInputDown("removeRB")){
+            this.removeStartPosition = mouseToWorld;
+        }
+
+        if (this.removeStartPosition !== null && inputAPI.getMouseInput("removeRB") === false){
+            const endPosition = mouseToWorld;
+        
+            // get tiles that are within the start and end position
+            const xMin = Math.min(this.removeStartPosition.x, endPosition.x);
+            const xMax = Math.max(this.removeStartPosition.x, endPosition.x);
+            const yMin = Math.min(this.removeStartPosition.y, endPosition.y);
+            const yMax = Math.max(this.removeStartPosition.y, endPosition.y);
+
+            for (let tile of this.loadedTiles){
+                if (tile.x * this.tileGridSize > xMin && tile.x * this.tileGridSize < xMax && tile.y * this.tileGridSize > yMin && tile.y * this.tileGridSize < yMax){
+                    if (tile.noPhysics === undefined){
+                        tile.noPhysics = false;
+                    }
+                    tile.noPhysics = !tile.noPhysics;
+                }
+            }
+
+            this.generateColliders();
+        
+
+            this.removeStartPosition = null;
+        }
+
         if (pressingMouse){
             if (mouseCoords.x < this.tileTexture.width * this.selectionImageScale && mouseCoords.y < this.tileTexture.height * this.selectionImageScale){   
                 const imageWidth = this.tileTexture.width * this.selectionImageScale;
@@ -107,8 +143,6 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
                 const tileHeight = imageHeight / this.tilesDown;
 
          
-
-                console.log(imageWidth, imageHeight);
 
                 // draw a rectangle around the selected at image width and height
                 const renderFunc = (canvas, ctx) => {
@@ -121,17 +155,14 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
                 const x = Math.floor(mouseCoords.x / tileWidth);
                 const y = Math.floor(mouseCoords.y / tileHeight);
 
-                console.log(x, y);
-
                 const newTextureCoordinate = y * this.tilesAcross + x;
 
 
-
                 this.currentEditorPiece = newTextureCoordinate;
-
             }
 
             else{
+
                 const x = Math.floor(mouseToWorld.x / this.tileGridSize);
                 const y = Math.floor(mouseToWorld.y / this.tileGridSize);
 
@@ -147,6 +178,8 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
                         }
                     }
                 }
+
+                this.generateColliders();
             }
 
         }
@@ -155,7 +188,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     Update() {
-        this.editor(); 
+        if (this.editorMode) this.editor(); 
 
         this.renderTiles(); 
     }
@@ -182,11 +215,15 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const renderFunc = (canvas, ctx) => {
                 // Draw the tile at the correct position
                 
-                // Remove the any white space around the tile
-
-
-                
                 ctx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
+
+                if (this.editorMode){
+                    // Draw a outline rectangle around the tile
+                    ctx.strokeStyle = "green";
+                    ctx.strokeRect(x, y, this.tileGridSize, this.tileGridSize);
+                }
+                
+
             }
 
             const renderTask = new RenderAPI.RenderTask(renderFunc);
@@ -213,7 +250,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         }
 
         for (let tile of this.loadedTiles){
-            tileMap.tiles.push({x: tile.x, y: tile.y, textureCoordinate: tile.textureCoordinate});
+            tileMap.tiles.push({x: tile.x, y: tile.y, textureCoordinate: tile.textureCoordinate, noPhysics: tile.noPhysics});
         }
 
 
@@ -231,7 +268,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         const mergedBlocks = new Map();
         // fill merged blocks with the loaded tiles
         for (let tile of this.loadedTiles){
-            if (tile.textureCoordinate !== -1){
+            if (tile.textureCoordinate !== -1 && !tile.noPhysics){
                 mergedBlocks.set(`${tile.x},${tile.y}`, `${tile.x},${tile.y},1,1`);
             }
         }
@@ -307,7 +344,12 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         mergeRows();
         mergeSameWidthRows();
 
-        console.log(mergedBlocks);
+
+        if (this.tileRB !== null){
+            const physModule = this.engineAPI.getModule("physics")
+            physModule.physicsEngine.deleteRigidbody(this.tileRB);
+            this.tileRB = null;   
+        }
 
         const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, Infinity, 1, []);
         for (const colliderShape of mergedBlocks){
@@ -326,6 +368,10 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
             rigidBody.addCollider(new Physics.RectangleCollider(rigidBody, x, y, 0, 1, width * this.tileGridSize, height * this.tileGridSize)).tags.add('ground');
         }
+
+        this.tileRB = rigidBody;
+
+        console.log(rigidBody);
 
         const physModule = this.engineAPI.getModule("physics")
         physModule.addRigidbody(rigidBody);
