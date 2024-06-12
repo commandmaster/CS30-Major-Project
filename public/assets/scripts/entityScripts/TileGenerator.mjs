@@ -20,6 +20,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     Start() {
         const inputModule = this.engineAPI.getModule("input");
         inputModule.addMouseInput("tileEdit").addKeybind(0);
+        inputModule.addKeyboardInput("eraser").addKeybind("e");
 
         this.texturesPath = "./assets/textures/tileMap1.png";
         this.tileTexture = new Image();
@@ -49,9 +50,6 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             }
 
             this.fillBlankTiles();
-
-            //this.saveTileMapping();
-            //console.log(this.loadedTiles);
 
             this.generateColliders();
         });
@@ -90,10 +88,14 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         const saveRenderTask = new RenderAPI.RenderTask(saveRenderFunc);
         renderAPI.addTask(saveRenderTask, true);
             
+        if (inputAPI.getInputDown("eraser")){
+            this.currentEditorPiece = -1;
+        }
 
         if (inputAPI.getInputDown("tileEdit")){
             if (mouseCoords.x > saveButton.x && mouseCoords.x < saveButton.x + saveButton.width && mouseCoords.y > saveButton.y && mouseCoords.y < saveButton.y + saveButton.height){
                     this.saveTileMapping();
+                    return;
             } 
         }
 
@@ -153,7 +155,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     Update() {
-        //this.editor(); 
+        this.editor(); 
 
         this.renderTiles(); 
     }
@@ -226,51 +228,108 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     generateColliders(){
-        const startCollider = (x, y, alreadyCheckedSet) => {
-            let startPos = {x: x, y: y};
-            for (let tile of this.loadedTiles){
-                if (alreadyCheckedSet.has(`${tile.x},${tile.y}`)){
-                    continue;
-                }
-
-                alreadyCheckedSet.add(`${tile.x},${tile.y}`);
-
-                if (tile.textureCoordinate < 0){
-                    return {startPos: startPos, endPos: {x: tile.x, y: tile.y}, alreadyCheckedSet: alreadyCheckedSet};
-                }
-
-            }
-        }
-
-        let alreadyCheckedSet = new Set();  
+        const mergedBlocks = new Map();
+        // fill merged blocks with the loaded tiles
         for (let tile of this.loadedTiles){
-            if (alreadyCheckedSet.has(`${tile.x},${tile.y}`)){
-                continue;
+            if (tile.textureCoordinate !== -1){
+                mergedBlocks.set(`${tile.x},${tile.y}`, `${tile.x},${tile.y},1,1`);
             }
-
-            if (tile.textureCoordinate < 0){
-                alreadyCheckedSet.add(`${tile.x},${tile.y}`);
-                continue;
-            }
-
-            const start = startCollider(tile.x, tile.y, alreadyCheckedSet);
-            alreadyCheckedSet = start.alreadyCheckedSet;
-
-            const width = start.endPos.x - start.startPos.x;
-            const height = start.endPos.y - start.startPos.y;
-
-            const x = start.startPos.x * this.tileGridSize;
-            const y = start.startPos.y * this.tileGridSize;
-
-            const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, Infinity, 1, []);
-            const collider = new Physics.RectangleCollider(rigidBody, x, y, 0, 1, width * this.tileGridSize, height * this.tileGridSize);
-            collider.tags.add('ground');
-
-            rigidBody.addCollider(collider);
-            
-            const physicsEngine = this.engineAPI.getModule("physics"); 
-            physicsEngine.addRigidbody(rigidBody);
         }
+
+        const mergeRows = () => {
+            const searchNeighbours = (block) => {
+                const blockSplit = block.split(",");
+                const x = parseInt(blockSplit[0]);
+                const y = parseInt(blockSplit[1]);
+                const width = parseInt(blockSplit[2]);
+                const height = parseInt(blockSplit[3]);
+
+                const hasRightNeighbour = mergedBlocks.has(`${x + width},${y}`);     
+               
+
+                if (hasRightNeighbour){
+                    const rightNeighbour = mergedBlocks.get(`${x + width},${y}`);
+                    const rightNeighbourSplit = rightNeighbour.split(",");
+                    const rightNeighbourWidth = parseInt(rightNeighbourSplit[2]);
+                    const rightNeighbourHeight = parseInt(rightNeighbourSplit[3]);
+
+                    if (rightNeighbourHeight === height){
+                        mergedBlocks.delete(`${x + width},${y}`);
+                        mergedBlocks.set(`${x},${y}`, `${x},${y},${width + rightNeighbourWidth},${height}`);
+                        return searchNeighbours(`${x},${y},${width + rightNeighbourWidth},${height}`)
+                    }
+                }    
+
+                return false;
+            
+            }
+
+            for (let block of mergedBlocks){
+                searchNeighbours(block[1]);
+            }
+        }
+
+        const mergeSameWidthRows = () => {
+            const searchNeighbours = (block) => {
+                const blockSplit = block.split(",");
+                const x = parseInt(blockSplit[0]);
+                const y = parseInt(blockSplit[1]);
+                const width = parseInt(blockSplit[2]);
+                const height = parseInt(blockSplit[3]);
+
+                const hasBelowNeighbour = mergedBlocks.has(`${x},${y + height}`);     
+               
+
+                if (hasBelowNeighbour){
+                    const belowNeighbour = mergedBlocks.get(`${x},${y + height}`);
+                    const belowNeighbourSplit = belowNeighbour.split(",");
+                    const belowNeighbourWidth = parseInt(belowNeighbourSplit[2]);
+                    const belowNeighbourHeight = parseInt(belowNeighbourSplit[3]);
+
+                    if (belowNeighbourWidth === width){
+                        mergedBlocks.delete(`${x},${y + height}`);
+                        mergedBlocks.set(`${x},${y}`, `${x},${y},${width},${height + belowNeighbourHeight}`);
+                        return searchNeighbours(`${x},${y},${width},${height + belowNeighbourHeight}`)
+                    }
+                }    
+
+                return false;
+            
+            }
+
+
+            for (let block of mergedBlocks){
+                searchNeighbours(block[1]);
+            }
+        }
+
+        //console.log(mergedBlocks);
+        mergeRows();
+        mergeSameWidthRows();
+
+        console.log(mergedBlocks);
+
+        const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, Infinity, 1, []);
+        for (const colliderShape of mergedBlocks){
+            const colliderSplit = colliderShape[1].split(",");
+            let x = parseInt(colliderSplit[0])
+            let y = parseInt(colliderSplit[1]) 
+            const width = parseInt(colliderSplit[2]);
+            const height = parseInt(colliderSplit[3]);
+
+            // move the collider to match the correct postition
+            x *= -this.tileGridSize;
+            y *= -this.tileGridSize;
+
+            x -= width * this.tileGridSize / 2;
+            y -= height * this.tileGridSize / 2;
+
+            rigidBody.addCollider(new Physics.RectangleCollider(rigidBody, x, y, 0, 1, width * this.tileGridSize, height * this.tileGridSize)).tags.add('ground');
+        }
+
+        const physModule = this.engineAPI.getModule("physics")
+        physModule.addRigidbody(rigidBody);
+       
     }
 }
 

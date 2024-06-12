@@ -15,6 +15,7 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
        
         const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, 1, 0.1, [])
         rigidBody.addCollider(new Physics.CircleCollider(rigidBody, 70, 120, 1,70))
+        rigidBody.applyImpulse(new Physics.Vec2(0, -1000), 2)
 
         const tileMapGenerator = new EntityAPI.Entity(entityAPI, 'tileMapGenerator')
         tileMapGenerator.createComponent({"type": "scripting", "scriptNames": ["TileGenerator"]});
@@ -58,7 +59,6 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         )
         this.level.addEntity(ground) 
 
-        const groundRB = ground.components.get('rigidbody').rigidBody;
 
     }
 

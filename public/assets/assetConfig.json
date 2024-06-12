@@ -16,7 +16,7 @@
     },
     {
         "type": "image",
-        "path": "/assets/textures/groundTexture.png",
+        "path": "/assets/textures/groundTexture.jpg",
         "name": "groundTexture"
     },
     {
