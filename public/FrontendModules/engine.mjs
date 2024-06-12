@@ -102,7 +102,6 @@ export class Level{
                 const entity = this.entities[i];
                 this.entities[i].end();
                 this.entities.splice(i, 1);
-                console.log(`Removed entity ${name}`);
                 return entity;
             }
         }

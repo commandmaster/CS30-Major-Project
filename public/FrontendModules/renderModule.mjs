@@ -152,6 +152,54 @@ class Animation{
 class SpriteRendererComponent extends Component{
     constructor(entity, parentModule, engineAPI, componentConfig){
         super(entity, parentModule, engineAPI, componentConfig);
+        this.tileTexture = null;
+        this.isLoaded = false;
+
+        this.width = 0;
+        this.height = 0;
+        this.height = 0;
+        this.positionOffset = {x: 0, y: 0};
+        this.angleOffset = 0;
+        this.scale = 1;
+    }
+
+    setTileRender(texturePath, width, height, postitionOffset = {x: 0, y: 0}, angleOffset = 0, scale = 1){
+        this.tileTexture = new Image();
+        this.tileTexture.src = texturePath;
+        this.isLoaded = false;
+
+        this.tileTexture.onload = () => {
+            this.isLoaded = true;
+        }
+    
+        this.width = width;
+        this.height = height;
+        this.positionOffset = postitionOffset;
+        this.angleOffset = angleOffset;
+        this.scale = scale;
+    }
+
+    render(x, y, angle = 0){
+        if (this.tileTexture === null) return;
+        if (!this.isLoaded) return;
+
+        const renderFunc = (canvas, ctx) => {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.translate(this.positionOffset.x, this.positionOffset.y);
+            ctx.rotate(angle + this.angleOffset * Math.PI / 180);
+            ctx.translate(-this.width / 2, -this.height / 2);
+            ctx.scale(this.scale, this.scale);
+            ctx.drawImage(this.tileTexture, 0, 0, this.width, this.height);
+        }
+
+        const renderTask = new RenderTask(renderFunc);
+        this.engineAPI.getAPI('render').addTask(renderTask);
+    }
+
+    update(dt){
+        const transform = this.entity.components.get('transform');
+        this.render(transform.position.x, transform.position.y, transform.rotation);
     }
 }
 

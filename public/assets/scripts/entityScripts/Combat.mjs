@@ -47,11 +47,13 @@ class BulletAnimationData{
 }
 
 class Gun {
-    constructor({recoilData, bulletSize, bulletSpeed, bulletDamage}, gunAnimationDataArray, bulletAnimationData){
+    constructor({gunPositionOffset, recoilData, fireRate, bulletSize, bulletSpeed, bulletDamage}, gunAnimationDataArray, bulletAnimationData){
+        this.gunPositionOffset = gunPositionOffset;
         this.recoilData = recoilData;
         this.bulletSize = bulletSize;
         this.bulletSpeed = bulletSpeed;
         this.bulletDamage = bulletDamage;
+        this.fireRate = fireRate;
 
         this.gunAnimationDataArray = gunAnimationDataArray;
         this.bulletAnimationData = bulletAnimationData;
@@ -85,15 +87,17 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
 
         const assaultRifleData = new Gun(
             {
+                gunPositionOffset: {x: 0, y: 100},
                 recoilData: new RecoilData({
-                    rotationalRecoilSpeed: 0.4,
+                    rotationalRecoilSpeed: 0.3,
                     verticalRecoilSpeed: 0.1,
-                    rotationalMaxRecoil: 25,
+                    rotationalMaxRecoil: 30,
                     verticalMaxRecoil: 5,
-                    rotationalRecoilRandom: 1.5,
+                    rotationalRecoilRandom: 1.1,
                     verticalRecoilRandom: 0.2,
-                    recoilRandomInterval: 0.2
+                    recoilRandomInterval: 0.35
                 }),
+                fireRate: 8,
                 bulletSize: 3,
                 bulletSpeed: 2200,
                 bulletDamage: 1
@@ -131,6 +135,7 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
                 gunAnimator.getAnimation(gun[0] + gunAnimation.name).flipPoint = gunAnimation.flipPoint;
                 gunAnimator.getAnimation(gun[0] + gunAnimation.name).offset = gunAnimation.offset;
             }
+            
         }
 
         weaponEntity.components.get('animator').playAnimation(this.equippedWeapon + 'idle');
@@ -155,6 +160,17 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
         if (currentAnimation.name === this.equippedWeapon + 'shooting'){
             this.recoilRandomTimer += dt;
 
+            const shootingAnim = weaponEntity.components.get('animator').getAnimation(this.equippedWeapon + 'shooting');
+
+            // set frame rate to match fire rate of the gun (one complete animation cycle per shot)
+            const totalFrames = shootingAnim.frameCount; // total frames in the animation
+            
+            const fireRate = this.guns.get(this.equippedWeapon).fireRate; // fire rate of the gun
+
+            // adjust the frame rate (fps) to match the fire rate of the gun
+            shootingAnim.frameRate =  fireRate * totalFrames;
+
+
             // get recoil data from the gun
             const recoilData = this.guns.get(this.equippedWeapon).recoilData;
             const rotationalRecoilSpeed = recoilData.rotationalRecoilSpeed;
@@ -164,6 +180,7 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
             const rotationalRecoilRandom = recoilData.rotationalRecoilRandom;
             const verticalRecoilRandom = recoilData.verticalRecoilRandom;
             const recoilRandomInterval = recoilData.recoilRandomInterval;
+            
             
 
 
@@ -187,10 +204,10 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
             }
 
         } else{
-            this.timeSinceStartedShooting = 0;
+            this.timeSinceStartedShooting = Infinity;
             this.rotationalRecoil = 0;
             this.verticalRecoil = 0;
-            this.recoilRandomTimer = 0;
+            this.recoilRandomTimer = 0; 
         }
 
     
@@ -200,10 +217,10 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
         const player = this.engineAPI.getCurrentLevel().getEntity('player');
         const playerPos = player.components.get('transform').position
 
-        weaponPos.x = playerPos.x + 0;
+        weaponPos.x = playerPos.x + this.guns.get(this.equippedWeapon).gunPositionOffset.x;
 
         const currentAnimationName = currentAnimation.name;
-        weaponPos.y = playerPos.y + (currentAnimationName === 'shoot' ? 100 : 120); 
+        weaponPos.y = playerPos.y + this.guns.get(this.equippedWeapon).gunPositionOffset.y;
 
         const mouseToweapon = this.engineAPI.getAPI('render').getCamera().screenToWorld(this.engineAPI.getAPI('input').getMousePosition().x, this.engineAPI.getAPI('input').getMousePosition().y);
 
@@ -223,66 +240,65 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
         weaponEntity.components.get('transform').position.y += this.verticalRecoil;
         
 
-    
-
-        if (currentAnimation.name === this.equippedWeapon + 'shooting' && currentAnimation.frameIndex === 7){
-            
-
-
-            const bullet = new EntityAPI.Entity(this.engineAPI.getAPI('entity'), 'bullet' + crypto.randomUUID());
-            bullet.createComponent({"type":"animator"});
-            const bulletAnimator = bullet.components.get('animator');
-
-            const bulletAnimationData = this.guns.get(this.equippedWeapon).bulletAnimationData;
-
-            const bulletAnim = bulletAnimator.createAnimation(bulletAnimationData.name, bulletAnimationData.spriteSheet, bulletAnimationData.width, bulletAnimationData.height, bulletAnimationData.frames, bulletAnimationData.frameRate);
-            bulletAnim.scale = bulletAnimationData.scale;
-            bulletAnim.pivotPoint = bulletAnimationData.pivotPoint;
-            bulletAnim.offset = bulletAnimationData.offset;
-            bulletAnimator.playAnimation(bulletAnimationData.name);
-
-            
-            // get the rotated position of the gun barrel
-            // get the translated pivot point of the gun barrel
-            const pivotPoint = currentAnimation.pivotPoint;
-            const flipPoint = currentAnimation.flipPoint;
-
-
-            const gunCenter = new Vec2(weaponPos.x - pivotPoint.x , weaponPos.y - pivotPoint.y);
-
-            const bulletPos = Vec2.rotatePoint(new Vec2(gunCenter.x + ((currentAnimation.isFlipped ? -1 : 1) * 90), gunCenter.y), new Vec2(gunCenter.x, gunCenter.y), (currentAnimation.isFlipped ? -1 : 1) * weaponEntity.components.get('transform').rotation * Math.PI / 180);
-            
-            
-            const bulletSize = this.guns.get(this.equippedWeapon).bulletSize;
-            bullet.createComponent({"type": "rigidbody", "rigidBody": new Physics.Rigidbody(bulletPos, 0, 1, 0.1, [])});
-            bullet.getComponent('rigidbody').rigidBody.addCollider(new Physics.CircleCollider(bullet.getComponent('rigidbody').rigidBody, 0, 0, 1, bulletSize)).tags.add('bullet');
-
-            const bulletRb = bullet.getComponent('rigidbody').rigidBody;
-            const playerRb = player.components.get('rigidbody').rigidBody;
-
-            bulletRb.acceleration = new Vec2(0, 0);
-
-            const bulletSpeed = this.guns.get(this.equippedWeapon).bulletSpeed;
-
-            bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(bulletSpeed);
-            bullet.components.get('transform').rotation = Vec2.angle(bulletRb.velocity) * 180 / Math.PI;
-
-            bulletRb.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
-                if (collisionData.collider1.tags.has('enemy') || collisionData.collider2.tags.has('enemy')){
-                    const level = this.engineAPI.getCurrentLevel();
-                    level.removeEntity(rigidBody.entity);
-                    level.removeEntity(otherBody.entity);
-                }
-
-                else {
-                    const level = this.engineAPI.getCurrentLevel();
-                    level.removeEntity(bullet.name);
-                }
-            }
-
-            const level = this.engineAPI.getCurrentLevel();
-            level.addEntity(bullet);
+        if (currentAnimation.name === this.equippedWeapon + 'shooting' && this.timeSinceStartedShooting >= 1 / this.guns.get(this.equippedWeapon).fireRate){
+            // Have to run at the end of the frame to fix bug where the gun rotation is not updated is time and fires a bullet in the wrong direction
+            this.shootBullet();
         }
+    }
+
+    shootBullet(){
+        this.timeSinceStartedShooting = 0;
+
+
+        const bullet = new EntityAPI.Entity(this.engineAPI.getAPI('entity'), 'bullet' + crypto.randomUUID());
+        bullet.createComponent({"type":"animator"});
+        const bulletAnimator = bullet.components.get('animator');
+
+        const bulletAnimationData = this.guns.get(this.equippedWeapon).bulletAnimationData;
+
+        const bulletAnim = bulletAnimator.createAnimation(bulletAnimationData.name, bulletAnimationData.spriteSheet, bulletAnimationData.width, bulletAnimationData.height, bulletAnimationData.frames, bulletAnimationData.frameRate);
+        bulletAnim.scale = bulletAnimationData.scale;
+        bulletAnim.pivotPoint = bulletAnimationData.pivotPoint;
+        bulletAnim.offset = bulletAnimationData.offset;
+        bulletAnimator.playAnimation(bulletAnimationData.name);
+
+        
+        // get the rotated position of the gun barrel
+        // get the translated pivot point of the gun barrel
+        const weaponEntity = this.entity;
+        const weaponPos = weaponEntity.components.get('transform').position;
+        const currentAnimation = weaponEntity.components.get('animator').currentAnimation;
+
+        
+        const pivotPoint = currentAnimation.pivotPoint;
+
+        const gunCenter = new Vec2(weaponPos.x - pivotPoint.x , weaponPos.y - pivotPoint.y);
+
+        const bulletPos = Vec2.rotatePoint(new Vec2(gunCenter.x + ((currentAnimation.isFlipped ? -1 : 1) * 90), gunCenter.y), new Vec2(gunCenter.x, gunCenter.y), (currentAnimation.isFlipped ? -1 : 1) * weaponEntity.components.get('transform').rotation * Math.PI / 180);
+        
+        
+        const bulletSize = this.guns.get(this.equippedWeapon).bulletSize;
+        bullet.createComponent({"type": "rigidbody", "rigidBody": new Physics.Rigidbody(bulletPos, 0, 1, 0.1, [])});
+        bullet.createComponent({"type": "scripting", "scriptNames": ["Bullet"]});   
+        bullet.getComponent('rigidbody').rigidBody.addCollider(new Physics.CircleCollider(bullet.getComponent('rigidbody').rigidBody, 0, 0, 1, bulletSize)).tags.add('bullet');
+
+        const bulletRb = bullet.getComponent('rigidbody').rigidBody;
+        
+
+        bulletRb.acceleration = new Vec2(0, 0);
+
+        const bulletSpeed = this.guns.get(this.equippedWeapon).bulletSpeed;
+
+        bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(bulletSpeed);
+        bullet.components.get('transform').rotation = Vec2.angle(bulletRb.velocity) * 180 / Math.PI;
+
+        bulletRb.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
+            const level = this.engineAPI.getCurrentLevel();
+            level.removeEntity(bullet.name);
+        }
+
+        const level = this.engineAPI.getCurrentLevel();
+        level.addEntity(bullet);
     }
 }
 

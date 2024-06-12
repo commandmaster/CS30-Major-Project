@@ -16,7 +16,9 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, 1, 0.1, [])
         rigidBody.addCollider(new Physics.CircleCollider(rigidBody, 70, 120, 1,70))
 
-        
+        const tileMapGenerator = new EntityAPI.Entity(entityAPI, 'tileMapGenerator')
+        tileMapGenerator.createComponent({"type": "scripting", "scriptNames": ["TileGenerator"]});
+        this.level.addEntity(tileMapGenerator);
 
 
         player.createComponent({"type": "rigidbody", "rigidBody": rigidBody});
@@ -39,8 +41,20 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
         const ground = new EntityAPI.Entity(entityAPI, 'ground')
         const groundRigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 500), Math.PI/64, Infinity, 1, [])
-        groundRigidBody.addCollider(new Physics.RectangleCollider(groundRigidBody, 0, 0, 0, 1, 3000, 200)).tags.add('ground')
+        groundRigidBody.addCollider(new Physics.RectangleCollider(groundRigidBody, 0, 0, 0, 1, 1200, 630)).tags.add('ground')
         ground.createComponent({"type": "rigidbody", "rigidBody": groundRigidBody})
+        ground.createComponent({"type": "spriteRenderer"});
+
+        const groundRenderer = ground.components.get('spriteRenderer')
+
+        groundRenderer.setTileRender(
+            './assets/textures/groundTexture.jpg',
+            1200,
+            630,
+            0, 
+            0,
+            1
+        )
         this.level.addEntity(ground)
 
         const groundRB = ground.components.get('rigidbody').rigidBody;

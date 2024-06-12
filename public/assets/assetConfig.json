@@ -15,6 +15,11 @@
         "name" : "assaultIdle"
     },
     {
+        "type": "image",
+        "path": "/assets/textures/groundTexture.png",
+        "name": "groundTexture"
+    },
+    {
         "name": "testLevel",
         "type": "script",
         "subType": "levelManager",
@@ -30,6 +35,18 @@
         "name": "Combat",
         "type": "script",
         "path": "/assets/scripts/entityScripts/Combat.mjs",
+        "subType": "entity"
+    },
+    {
+        "name": "Bullet",
+        "type": "script",
+        "path": "/assets/scripts/entityScripts/Bullet.mjs",
+        "subType": "entity"
+    },
+    {
+        "name": "TileGenerator",
+        "type": "script",
+        "path": "/assets/scripts/entityScripts/TileGenerator.mjs",
         "subType": "entity"
     }
 ]
