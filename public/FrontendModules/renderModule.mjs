@@ -25,6 +25,8 @@ class Camera{
         this.ctx.translate(-this.x, -this.y);
     }
 
+
+
     cameraStart(){
         this.ctx.save();
         this.#update();
@@ -226,7 +228,8 @@ export class RenderAPI extends ModuleAPI {
         super(engineAPI);
     }
 
-    addTask(renderTask){
+    addTask(renderTask, ignoreCamera = false){
+        renderTask.ignoreCamera = ignoreCamera;
         const module = super.getModule('render');
         module.renderTasks.push(renderTask);
     }
@@ -285,7 +288,11 @@ export class RenderModule extends Module {
 
         for(const renderTask of this.renderTasks){
             if (typeof renderTask.render !== 'function' || typeof renderTask.render === 'undefined' || renderTask.render === null) throw new Error("Render task is not valid.");
+            if (renderTask.ignoreCamera) this.camera.cameraEnd();
+
             renderTask.render(this.canvas, this.ctx);
+
+            if (renderTask.ignoreCamera) this.camera.cameraStart();
         }
 
         for(const renderTask of this.permenantRenderTasks){

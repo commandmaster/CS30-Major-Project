@@ -82,6 +82,8 @@ export class InputModule extends Module {
     }
 
     #setupListeners(){
+        document.addEventListener('contextmenu', (event) => event.preventDefault());
+
         window.addEventListener('keydown', (event) => {
             // loop through all keyboard inputs and check if the key that was pressed is bound to any of them
             const key = event.key;
@@ -223,6 +225,10 @@ class MouseInput {
     }
 
     addKeybind(button){
+        if (typeof button === 'string') button = parseInt(button);
+        if (button > 2 || button < 0) throw new Error('Mouse button must be between 0 and 2');
+        if (typeof button !== 'number') throw new Error('Mouse button must be a number (or a string that can be parsed to a number)');
+
         this.binds.push({button, value: true});
         return this;
     }
