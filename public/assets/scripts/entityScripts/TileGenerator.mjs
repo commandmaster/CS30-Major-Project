@@ -27,7 +27,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         inputModule.addKeyboardInput("shiftRemove", "bool").addKeybind("Shift"); // Remove the physics from the tile
         inputModule.addKeyboardInput("ctrlAdd", "bool").addKeybind("Control"); // Add the physics to the tile
 
-        this.editorMode = false; // Set to true to enable the editor modeaa
+        this.editorMode = true; // Set to true to enable the editor mode
 
         this.texturesPath = "./assets/textures/tileMap1.png";
         this.tileTexture = new Image();
@@ -63,6 +63,8 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             this.fillBlankTiles();
 
             this.generateColliders();
+
+            this.reloadRenderableTiles();
         });
 
     }
@@ -245,9 +247,8 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
     Update() {
 
-        this.renderTiles(); 
+        //this.renderTiles(); 
         if (this.editorMode) this.editor(); 
-
     }
 
     renderTiles(){
@@ -287,14 +288,16 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
             const renderFunc = (canvas, ctx) => {
                 // Draw the tile at the correct position
-
+                const renderModule = this.engineAPI.getModule("render");
                 
-                ctx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
+
+
+                //ctx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
 
                 if (this.editorMode){
                     // Draw a outline rectangle around the tile
                     ctx.strokeStyle = "green";
-                    ctx.strokeRect(x, y, this.tileGridSize, this.tileGridSize);
+                   // ctx.strokeRect(x, y, this.tileGridSize, this.tileGridSize);
                 }
                 
 
@@ -302,6 +305,32 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
             const renderTask = new RenderAPI.RenderTask(renderFunc);
             renderAPI.addTask(renderTask);
+        }
+    }
+
+    reloadRenderableTiles(){
+        const offscreenCanvas = this.engineAPI.getModule("render").offscreenCanvas;
+        const offscreenCtx = offscreenCanvas.getContext("2d");
+
+        console.log('Reloading renderable tiles', offscreenCtx)
+
+        for (let tile of this.loadedTiles){
+            if (tile.textureCoordinate < 0){
+                continue;
+            }
+
+            const x = tile.x * this.tileGridSize;
+            const y = tile.y * this.tileGridSize;
+
+                      
+            // Get take the texture coordinate and convert it to the x and y coordinates of the texture
+            const imageTileWidth = Math.ceil(this.tileTexture.width / this.tilesAcross);
+            const imageTileHeight = Math.ceil(this.tileTexture.height / this.tilesDown);
+
+            const textureCoordinateToX = (tile.textureCoordinate % this.tilesAcross) * imageTileWidth;
+            const textureCoordinateToY = Math.floor(tile.textureCoordinate / this.tilesAcross) * imageTileHeight;
+
+            offscreenCtx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
         }
     }
 

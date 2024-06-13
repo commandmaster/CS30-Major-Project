@@ -99,8 +99,8 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
 
      
 
-        camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
-        camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
+        //camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
+        //camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
 
         /////////////////////////////
         /////////////////////////////
