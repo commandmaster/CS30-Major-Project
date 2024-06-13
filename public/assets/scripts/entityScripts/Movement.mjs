@@ -11,25 +11,34 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
     Start() {
         this.canPlayerJump = true;
 
+
         const inputAPI = this.engineAPI.getAPI("input");
         const inputModule = this.engineAPI.getModule("input");
+
+        /////////////////////////////
+        /// TESTING ONLY ///////////
+        /////////////////////////////
+
+        inputModule.addKeyboardInput("teleport", "bool").addKeybind("t");
+
+        /////////////////////////////  
+        /////////////////////////////
+        /////////////////////////////
 
         inputModule.addKeyboardInput("horizontal", "axis").addKeybind("a", -1).addKeybind("d", 1);
         inputModule.addKeyboardInput("jump", "bool").addKeybind(" ").addKeybind("ArrowUp");
 
         const rigidBody = this.entity.getComponent("rigidbody").rigidBody;
         rigidBody.acceleration = new Physics.Vec2(0, 2600); // Gravity
-        rigidBody.linearDrag = 0.1;
+        rigidBody.linearDrag = 0.15;
         rigidBody.ignoreVerticalDrag = true;
 
-        const groundCheckCollider = new Physics.CircleCollider(rigidBody, 70, 200, 0.000001, 15);
+        const groundCheckCollider = new Physics.CircleCollider(rigidBody, 70, 200, 0.000001, 30);
         groundCheckCollider.isTrigger = true;
     
         groundCheckCollider.tags.add('groundCheck');
         rigidBody.addCollider(groundCheckCollider);
 
-
-    
        
     }
 
@@ -50,8 +59,8 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
             animation.isFlipped = true;
         }
  
-        const maxSpeed = 1050;
-        const acceleration = 175;
+        const maxSpeed = 1150;
+        const acceleration = 200;
         const jumpForce = 1350;
     
         this.entity.getComponent("rigidbody").rigidBody.applyImpulse(new Physics.Vec2(inputAPI.getKeyboardInput("horizontal") * acceleration, 0));
@@ -75,9 +84,27 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         
 
         const camera = this.engineAPI.getAPI("render").getCamera();
+        const mousePos = inputAPI.getMousePosition();
+        const worldPos = camera.screenToWorld(mousePos.x, mousePos.y);
+
+        /////////////////////////////
+        /// TESTING ONLY ///////////
+        /////////////////////////////
+
+        if (inputAPI.getInputDown("teleport")){
+            rb.position = new Physics.Vec2(worldPos.x, worldPos.y);
+            rb.velocity = new Physics.Vec2(0, 0);
+            this.entity.getComponent("transform").position = rb.position;
+        }
+
+     
 
         camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
         camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
+
+        /////////////////////////////
+        /////////////////////////////
+        /////////////////////////////
     }
 }
 

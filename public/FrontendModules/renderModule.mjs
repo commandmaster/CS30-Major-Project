@@ -2,6 +2,7 @@ import { ModuleAPI, Module } from "./moduleBase.mjs";
 import { Component } from "./moduleBase.mjs";
 
 class Camera{
+    #targetEntity;
     #baseResolution;
     constructor(renderAPI){
         this.x = 0;
@@ -16,6 +17,8 @@ class Camera{
         this.scale = 1;
 
         this.frameOfView = {width: 1920, height: 1080};
+
+        this.#targetEntity = null;
     }
 
     #update(){
@@ -32,9 +35,10 @@ class Camera{
         this.ctx.translate(-this.x, -this.y);
     }
 
-
+    
 
     cameraStart(){
+        
         this.ctx.save();
         this.#update();
     }
@@ -287,7 +291,7 @@ export class RenderModule extends Module {
     }
 
     update(dt){
-        
+                
         this.#resizeCanvas();
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

@@ -27,8 +27,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         inputModule.addKeyboardInput("shiftRemove", "bool").addKeybind("Shift"); // Remove the physics from the tile
         inputModule.addKeyboardInput("ctrlAdd", "bool").addKeybind("Control"); // Add the physics to the tile
 
-
-        this.editorMode = false;
+        this.editorMode = false; // Set to true to enable the editor modeaa
 
         this.texturesPath = "./assets/textures/tileMap1.png";
         this.tileTexture = new Image();
@@ -41,7 +40,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
         this.selectionImageScale = 1;
 
-        this.worldSize = {worldXMin: -300, worldXMax: 300, worldYMin: -100, worldYMax: 100};
+        this.worldSize = {worldXMin: -300, worldXMax: 300, worldYMin: -800, worldYMax: 100};
 
         this.tileMappingPath = "./assets/textures/tileMap1.json";
         
@@ -67,6 +66,8 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         });
 
     }
+
+   
 
     editor(){
         // Create a tile edit mode where you can click on a tile and change its texture coordinate to a different tile visually from the texture
@@ -243,9 +244,10 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     Update() {
-        if (this.editorMode) this.editor(); 
 
         this.renderTiles(); 
+        if (this.editorMode) this.editor(); 
+
     }
 
     renderTiles(){
@@ -254,8 +256,25 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
                 continue;
             }
 
+            
+            const renderAPI = this.engineAPI.getAPI("render");
+
             const x = tile.x * this.tileGridSize;
             const y = tile.y * this.tileGridSize;
+
+            // check if tile is in range of the camera
+            const camera = renderAPI.getCamera();
+
+            const cameraX = camera.x;
+            const cameraY = camera.y;
+            const cameraFrameOfView = camera.frameOfView;
+
+            const extraSpace = 4 * this.tileGridSize;
+
+            // Check if the tile is in the camera view
+            if (x < cameraX - cameraFrameOfView.width / 2 - extraSpace || x > cameraX + cameraFrameOfView.width / 2 + extraSpace || y < cameraY - cameraFrameOfView.height / 2 - extraSpace || y > cameraY + cameraFrameOfView.height / 2 + extraSpace){
+                continue;
+            }
 
 
             // Get take the texture coordinate and convert it to the x and y coordinates of the texture
@@ -266,22 +285,8 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const textureCoordinateToY = Math.floor(tile.textureCoordinate / this.tilesAcross) * imageTileHeight;
 
 
-            const renderAPI = this.engineAPI.getAPI("render");
             const renderFunc = (canvas, ctx) => {
                 // Draw the tile at the correct position
-
-                // check if tile is in range of the camera
-                const camera = renderAPI.getCamera();
-                const cameraX = camera.x;
-                const cameraY = camera.y;
-                const cameraFrameOfView = camera.frameOfView;
-
-                const extraSpace = 100;
-
-                // Check if the tile is in the camera view
-                if (x < cameraX - cameraFrameOfView.width / 2 - extraSpace || x > cameraX + cameraFrameOfView.width / 2 + extraSpace || y < cameraY - cameraFrameOfView.height / 2 - extraSpace || y > cameraY + cameraFrameOfView.height / 2 + extraSpace){
-                    return;
-                }
 
                 
                 ctx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
@@ -314,11 +319,27 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     saveTileMapping(){
+        const alreadySaved = new Set();
+
         const tileMap = {
             tiles: []
         }
 
+        // Load session stored tiles
+        const storedTiles = JSON.parse(localStorage.getItem("StoredTiles"));
+
+        if (storedTiles !== null){
+            for (let tile of storedTiles){
+                alreadySaved.add(`${tile.x},${tile.y}`);
+                tileMap.tiles.push({x: tile.x, y: tile.y, textureCoordinate: tile.textureCoordinate, noPhysics: tile.noPhysics});
+            }
+        }
+
+
         for (let tile of this.loadedTiles){
+            if (alreadySaved.has(`${tile.x},${tile.y}`)){
+                continue;
+            }
             tileMap.tiles.push({x: tile.x, y: tile.y, textureCoordinate: tile.textureCoordinate, noPhysics: tile.noPhysics});
         }
 
