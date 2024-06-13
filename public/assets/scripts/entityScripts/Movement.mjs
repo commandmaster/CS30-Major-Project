@@ -39,7 +39,7 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         groundCheckCollider.tags.add('groundCheck');
         rigidBody.addCollider(groundCheckCollider);
 
-       
+        this.isInDevMode = false;
     }
 
     Update() {
@@ -97,10 +97,20 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
             this.entity.getComponent("transform").position = rb.position;
         }
 
-     
+        
+        window.on('enableDevMode', () => {
+            this.isInDevMode = true; 
+        });
 
-        //camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
-        //camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
+        window.on('disableDevMode', () => {
+            this.isInDevMode = false;
+        });
+
+        if (!this.isInDevMode) {
+            camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
+            camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
+        }
+        
 
         /////////////////////////////
         /////////////////////////////

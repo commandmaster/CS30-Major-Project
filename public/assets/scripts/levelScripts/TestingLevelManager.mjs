@@ -2,6 +2,8 @@ import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.mjs";
 import { EntityAPI } from "../../../FrontendModules/entityModule.mjs";
 import { PhysicsAPI } from "../../../FrontendModules/physicsModule.mjs";
 import * as Physics from "../../../SharedCode/physicsEngine.mjs";
+import { RenderAPI } from "../../../FrontendModules/renderModule.mjs";
+import { MathPlus } from "../../../SharedCode/mathPlus.mjs";
 
 
 export default class TestingLevelManager extends ScriptingAPI.LevelManager {
@@ -10,6 +12,74 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
     }
 
     Start() {
+        this.isDevMode = false;
+        window.devMode = () => {
+            this.isDevMode = !this.isDevMode;
+            if (this.isDevMode){
+                const event = new CustomEvent('enableDevMode', {detail: {enabled: true}});
+                window.dispatchEvent(event);
+                return "DEVELOPER MODE ACTIVATED"
+            } else {
+                const event = new CustomEvent('disableDevMode', {detail: {enabled: false}});
+                window.dispatchEvent(event);
+                return "DEVELOPER MODE DEACTIVATED"
+            }
+        }
+
+        const inputModule = this.engineAPI.getModule('input');
+        inputModule.addKeyboardInput("start", "bool").addKeybind(" ");
+        this.started = false;
+    }
+
+    Update(dt) {
+        if (!this.started) {
+            const inputAPI = this.engineAPI.getAPI('input');
+            if (inputAPI.getInputDown('start')) {
+                this.started = true;
+                this.startLevel();
+            }
+
+            // // Create Start Screen
+            const renderAPI = this.engineAPI.getAPI('render');
+            const camera = renderAPI.getCamera();
+            const fov = camera.frameOfView;
+
+            const renderFunc = (canvas, ctx) => {
+
+                ctx.fillStyle = "black";
+                ctx.fillRect(-fov.width/2 , -fov.height/2, fov.width, fov.height);
+
+                ctx.fillStyle = `rgb(${Math.sin(performance.now()/600)*70 + 180}, 0, ${Math.sin(performance.now()/600)*255}, ${Math.random() + 0.8})`;
+                ctx.font = "80px Monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("Tower Jump", 0, Math.sin(performance.now()/600)*80 - 200);
+
+                ctx.font = "42px Monospace";
+                ctx.fillText("Press Space to Start", 0, Math.sin(performance.now()/600)*30 + 100);
+
+
+            }
+            const renderTask = new RenderAPI.RenderTask(renderFunc);
+            renderAPI.addTask(renderTask);
+        }
+
+        else {
+            this.levelUpdate(dt);
+        }
+
+    }
+
+
+    End() {
+        
+    }
+
+    levelUpdate(dt) {
+
+    }
+
+
+    startLevel() {
         const entityAPI = this.engineAPI.getAPI('entity')
         const player = new EntityAPI.Entity(entityAPI, 'player')
        
@@ -49,18 +119,6 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         demon1.createComponent({"type": "scripting", "scriptNames": ["Demon"]});
         
         this.level.addEntity(demon1);
-
-
-    }
-
-    Update() {
-        
-         
-    }
-
-
-    End() {
-        
     }
 }
 

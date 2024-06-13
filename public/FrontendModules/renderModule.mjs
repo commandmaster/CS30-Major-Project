@@ -248,6 +248,7 @@ export class RenderAPI extends ModuleAPI {
     static SpriteRendererComponent = SpriteRendererComponent;
     static RenderTask = RenderTask;
 
+    permenantRenderTaskIdentifiers = new Map();
     baseResolution = {width: 1920, height: 1080};
     constructor(engineAPI) {
         super(engineAPI);
@@ -259,9 +260,19 @@ export class RenderAPI extends ModuleAPI {
         module.renderTasks.push(renderTask);
     }
 
-    addPermenantTask(renderTask){
+    addPermenantTask(renderTask, identifier){
         const module = super.getModule('render');
         module.permenantRenderTasks.push(renderTask);
+
+        this.permenantRenderTaskIdentifiers.set(identifier, renderTask);
+    }
+
+    removePermenantTask(identifier){
+        const module = super.getModule('render');
+        const task = this.permenantRenderTaskIdentifiers.get(identifier);
+        const index = module.permenantRenderTasks.indexOf(task);
+        module.permenantRenderTasks.splice(index, 1);
+        this.permenantRenderTaskIdentifiers.delete(identifier);
     }
 
     getCamera(){

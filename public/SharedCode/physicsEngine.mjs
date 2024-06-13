@@ -1664,12 +1664,15 @@ class PhysicsEngine{
         this.currentlyColliding = [];
         dt = Math.min(dt, this.#maxTimeStep/1000); // Clamp the delta time to the maximum time step
 
+
         for (const rigidbody of this.rigidBodies){
             rigidbody.currentCollisions.clear();
             rigidbody.stepSimulation(dt);
         }
 
+
         this.#checkAllCollisions();
+
     }
 
     /**
