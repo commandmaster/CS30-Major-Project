@@ -5,7 +5,8 @@ import { Vec2 } from "../../../SharedCode/physicsEngine.mjs";
 const Physics = ScriptingAPI.Physics;
 
 class RecoilData{
-    constructor({rotationalRecoilSpeed, verticalRecoilSpeed, rotationalMaxRecoil, verticalMaxRecoil, rotationalRecoilRandom, verticalRecoilRandom, recoilRandomInterval}){
+    constructor({knockBackStrength, rotationalRecoilSpeed, verticalRecoilSpeed, rotationalMaxRecoil, verticalMaxRecoil, rotationalRecoilRandom, verticalRecoilRandom, recoilRandomInterval}){
+        this.knockBackStrength = knockBackStrength;
         this.rotationalRecoilSpeed = rotationalRecoilSpeed;
         this.verticalRecoilSpeed = verticalRecoilSpeed;
         this.rotationalMaxRecoil = rotationalMaxRecoil;
@@ -89,6 +90,7 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
             {
                 gunPositionOffset: {x: 0, y: 100},
                 recoilData: new RecoilData({
+                    knockBackStrength: 100,
                     rotationalRecoilSpeed: 0.3,
                     verticalRecoilSpeed: 0.1,
                     rotationalMaxRecoil: 30,
@@ -287,9 +289,14 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
 
         bulletRb.acceleration = new Vec2(0, 0);
 
-        const bulletSpeed = this.guns.get(this.equippedWeapon).bulletSpeed;
+        bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(this.guns.get(this.equippedWeapon).bulletSpeed);
+        const playerRb = this.engineAPI.getCurrentLevel().getEntity('player').components.get('rigidbody').rigidBody;
 
-        bulletRb.velocity = Physics.Vec2.sub(gunCenter, bulletPos).normalize().scale(bulletSpeed);
+        const recoilVector = new Vec2(bulletRb.velocity.x, bulletRb.velocity.y).normalize().scale(this.guns.get(this.equippedWeapon).recoilData.knockBackStrength);
+        recoilVector.y = 0;
+
+        playerRb.velocity.sub(recoilVector);
+
         bullet.components.get('transform').rotation = Vec2.angle(bulletRb.velocity) * 180 / Math.PI;
 
         bulletRb.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {

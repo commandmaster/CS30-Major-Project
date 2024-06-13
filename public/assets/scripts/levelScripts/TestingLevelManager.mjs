@@ -40,24 +40,7 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         this.level.addEntity(assaultRifle);
 
 
-        // const ground = new EntityAPI.Entity(entityAPI, 'ground')
-        // const groundRigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 500), 0, Infinity, 1, [])
-        // groundRigidBody.addCollider(new Physics.RectangleCollider(groundRigidBody, 0, 0, 0, 1, 1200, 630)).tags.add('ground')
-        // ground.createComponent({"type": "rigidbody", "rigidBody": groundRigidBody})
-
-        // ground.createComponent({"type": "spriteRenderer"});
-
-        // const groundRenderer = ground.components.get('spriteRenderer')
-
-        // groundRenderer.setTileRender(
-        //     './assets/textures/groundTexture.jpg',
-        //     1200,
-        //     630,
-        //     0, 
-        //     0,
-        //     1
-        // )
-        //this.level.addEntity(ground) 
+        
 
 
     }
