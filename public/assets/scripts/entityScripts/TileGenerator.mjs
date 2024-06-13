@@ -63,7 +63,6 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             this.fillBlankTiles();
 
             this.generateColliders();
-
             this.reloadRenderableTiles();
         });
 
@@ -92,7 +91,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
        
 
         // Create the save button
-        const saveButton = {x: 0, y: this.tileTexture.width * this.selectionImageScale, width: 70, height: 50};
+        const saveButton = {x: 0, y: this.tileTexture.width, width: 70, height: 50};
         const saveRenderFunc = (canvas, ctx) => {
             ctx.fillStyle = "grey";
             ctx.fillRect(saveButton.x, saveButton.y, saveButton.width, saveButton.height);
@@ -187,6 +186,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             }
 
             this.generateColliders();
+            this.reloadRenderableTiles();
         
 
             this.removeStartPosition = null;
@@ -238,6 +238,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
                 }
 
                 this.generateColliders();
+                this.reloadSingleTile(x, y);
             }
 
         }
@@ -247,8 +248,39 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
     Update() {
 
-        //this.renderTiles(); 
+        this.renderTiles() 
         if (this.editorMode) this.editor(); 
+    }
+
+    reloadSingleTile(x, y){
+        console.log('Reloading single tile')
+
+        const renderModule = this.engineAPI.getModule("render");
+        const offscreenCanvas = renderModule.offscreenCanvas;
+        const offscreenCtx = offscreenCanvas.getContext("2d");
+        
+        if (!this.loadedCoordinates.has(`${x},${y}`)){
+            console.warn("Tile does not exist");
+            return;
+        }
+
+        const tile = this.loadedTiles.find(tile => tile.x === x && tile.y === y);
+        const xPosition = x * this.tileGridSize;
+        const yPosition = y * this.tileGridSize;
+
+         // Get take the texture coordinate and convert it to the x and y coordinates of the texture
+        const imageTileWidth = Math.ceil(this.tileTexture.width / this.tilesAcross);
+        const imageTileHeight = Math.ceil(this.tileTexture.height / this.tilesDown);
+
+        const textureCoordinateToX = (tile.textureCoordinate % this.tilesAcross) * imageTileWidth;
+        const textureCoordinateToY = Math.floor(tile.textureCoordinate / this.tilesAcross) * imageTileHeight;
+
+        offscreenCtx.save();
+        offscreenCtx.translate(renderModule.offscreenCanvasPosition.x, renderModule.offscreenCanvasPosition.y);
+        offscreenCtx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, xPosition, yPosition, this.tileGridSize + 1, this.tileGridSize + 1);
+        
+        
+        offscreenCtx.restore();
     }
 
     renderTiles(){
@@ -289,15 +321,13 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const renderFunc = (canvas, ctx) => {
                 // Draw the tile at the correct position
                 const renderModule = this.engineAPI.getModule("render");
-                
-
 
                 //ctx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
 
                 if (this.editorMode){
                     // Draw a outline rectangle around the tile
                     ctx.strokeStyle = "green";
-                   // ctx.strokeRect(x, y, this.tileGridSize, this.tileGridSize);
+                    ctx.strokeRect(x, y, this.tileGridSize, this.tileGridSize);
                 }
                 
 
@@ -309,10 +339,18 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     reloadRenderableTiles(){
-        const offscreenCanvas = this.engineAPI.getModule("render").offscreenCanvas;
+        const renderModule = this.engineAPI.getModule("render");
+        const offscreenCanvas = renderModule.offscreenCanvas;
         const offscreenCtx = offscreenCanvas.getContext("2d");
+        offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);    
+        
 
         console.log('Reloading renderable tiles', offscreenCtx)
+
+        let minY = Infinity;
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
 
         for (let tile of this.loadedTiles){
             if (tile.textureCoordinate < 0){
@@ -322,8 +360,32 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const x = tile.x * this.tileGridSize;
             const y = tile.y * this.tileGridSize;
 
-                      
-            // Get take the texture coordinate and convert it to the x and y coordinates of the texture
+            minY = Math.min(minY, y);
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+
+
+        }
+
+        offscreenCtx.save();
+        offscreenCanvas.width = maxX - minX + this.tileGridSize;
+        offscreenCanvas.height = maxY - minY + this.tileGridSize;
+        offscreenCtx.translate(-minX, -minY);
+
+
+        renderModule.offscreenCanvasPosition = {x: minX, y: minY};
+
+
+        for (let tile of this.loadedTiles){
+            if (tile.textureCoordinate < 0){
+                continue;
+            }
+
+            const x = tile.x * this.tileGridSize;
+            const y = tile.y * this.tileGridSize;
+
+
             const imageTileWidth = Math.ceil(this.tileTexture.width / this.tilesAcross);
             const imageTileHeight = Math.ceil(this.tileTexture.height / this.tilesDown);
 
@@ -332,6 +394,8 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
             offscreenCtx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
         }
+
+        offscreenCtx.restore();
     }
 
 

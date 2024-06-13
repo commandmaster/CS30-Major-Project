@@ -281,13 +281,13 @@ export class RenderModule extends Module {
     }
 
     preload(){
-        this.offscreenCanvas = document.createElement('canvas');
-        
-
         this.ctx.imageSmoothingEnabled = false;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.camera = new Camera(this.renderAPI);
+
+        this.offscreenCanvas = document.createElement('canvas');
+        this.offscreenCanvasPosition = {x: 0, y: 0};
     }
 
     preloadLevel(level){
@@ -303,27 +303,20 @@ export class RenderModule extends Module {
     }
 
     start(){
-        this.offscreenCanvas.width = 1000
-        this.offscreenCanvas.height = 1000    
+
     }
 
     update(dt){
-        this.offscreenCanvas.width = this.canvas.width;
-        this.offscreenCanvas.height = this.canvas.height;
         this.#resizeCanvas();
 
         
-
-
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
 
         this.camera.cameraStart();
 
-
-        
-        this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+        this.ctx.drawImage(this.offscreenCanvas, this.offscreenCanvasPosition.x, this.offscreenCanvasPosition.y);
 
         for(const renderTask of this.renderTasks){
             if (typeof renderTask.render !== 'function' || typeof renderTask.render === 'undefined' || renderTask.render === null) throw new Error("Render task is not valid.");
@@ -350,7 +343,5 @@ export class RenderModule extends Module {
     #resizeCanvas(){
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        
-
     }
 }
