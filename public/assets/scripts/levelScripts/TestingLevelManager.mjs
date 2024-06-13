@@ -14,7 +14,9 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const player = new EntityAPI.Entity(entityAPI, 'player')
        
         const rigidBody = new Physics.Rigidbody(new Physics.Vec2(0, 0), 0, 1, 0.1, [])
-        rigidBody.addCollider(new Physics.CircleCollider(rigidBody, 70, 120, 1,70))
+        const bodyCollider = new Physics.CircleCollider(rigidBody, 70, 120, 1,70)
+        bodyCollider.tags.add('player')
+        rigidBody.addCollider(bodyCollider)
         rigidBody.applyImpulse(new Physics.Vec2(0, -1000), 2)
 
         const tileMapGenerator = new EntityAPI.Entity(entityAPI, 'tileMapGenerator')
@@ -40,7 +42,13 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         this.level.addEntity(assaultRifle);
 
 
+       
         
+        // Enemy Logic
+        const demon1 = new EntityAPI.Entity(entityAPI, 'demon1');
+        demon1.createComponent({"type": "scripting", "scriptNames": ["Demon"]});
+        
+        this.level.addEntity(demon1);
 
 
     }

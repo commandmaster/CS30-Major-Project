@@ -134,10 +134,7 @@ class Animation{
         ctx.translate(this.offset.x, this.offset.y);
 
         ctx.translate(-this.flipPoint.x, -this.flipPoint.y);
-        // draw the flip point
-        ctx.fillStyle = 'blue';
-        //ctx.fillRect(0, 0, 5, 5);
-
+   
         if (this.isFlipped){
             ctx.scale(-1, 1);
         }
@@ -146,9 +143,6 @@ class Animation{
 
         ctx.translate(-this.pivotPoint.x, -this.pivotPoint.y);
 
-        // draw the pivot point
-        ctx.fillStyle = 'red';
-        //ctx.fillRect(0, 0, 5, 5);
 
         ctx.rotate(angle * Math.PI / 180);
         ctx.translate(this.pivotPoint.x, this.pivotPoint.y);
@@ -158,6 +152,25 @@ class Animation{
 
         ctx.drawImage(this.spriteSheet, this.frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth, this.frameHeight);
 
+        ctx.restore();
+
+
+        // Draw the flip point and pivot point
+        // Do it after the image is drawn so it is on top
+        const shoudlDrawPoints = false;
+        if (!shoudlDrawPoints) return;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.translate(this.offset.x, this.offset.y);
+        ctx.translate(-this.flipPoint.x, -this.flipPoint.y);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(0, 0, 5, 5);
+        ctx.translate(this.flipPoint.x, this.flipPoint.y);
+        ctx.translate(-this.pivotPoint.x, -this.pivotPoint.y);
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(0, 0, 5, 5);
+        ctx.translate(this.pivotPoint.x, this.pivotPoint.y);
         ctx.restore();
 
     }

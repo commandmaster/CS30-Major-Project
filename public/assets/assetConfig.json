@@ -50,9 +50,9 @@
         "subType": "entity"
     },
     {
-        "name": "Enemy",
+        "name": "Demon",
         "type": "script",
-        "path": "/assets/scripts/entityScripts/Enemy.mjs",
+        "path": "/assets/scripts/entityScripts/Demon.mjs",
         "subType": "entity"
     }
 ]

@@ -106,5 +106,9 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         /////////////////////////////
         /////////////////////////////
     }
+
+    inflictDamage(damage){
+        console.log("Inflicting damage: " + damage);
+    }
 }
 
