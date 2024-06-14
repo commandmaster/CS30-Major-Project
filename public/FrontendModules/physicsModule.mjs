@@ -97,7 +97,7 @@ export class PhysicsAPI extends ModuleAPI {
 
 
 export class PhysicsModule extends Module{
-    #timeStepLimit = 50; // Maximum time step to prevent spiral of death (ms) 
+    #timeStepLimit = 20; // Maximum time step to prevent spiral of death (ms) 
     constructor(engineAPI){
         super(engineAPI);
         this.physicsAPI = engineAPI.getAPI('physics');

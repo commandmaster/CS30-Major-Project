@@ -41,7 +41,38 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         groundCheckCollider.tags.add('groundCheck');
         rigidBody.addCollider(groundCheckCollider);
 
+        // This code is to prevent a momentum build up bug where the player will glitch through the ground
+        rigidBody.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
+            const cData = collisionData;
+            if (cData.collider1.tags.has('ground') || cData.collider2.tags.has('ground')){
+                // check if the y position of the player is decreasing or staying the same relatively the same
+                // If it is, then the player might be accelerating into the ground and we should stop the player from moving
+                // Eventually the player will phase through the ground
+                const yPositions = this.previousYPositions;
+                let yMin = yPositions[0];
+                let yMax = yPositions[0];
+
+                for (let i = 1; i < yPositions.length; i++){
+                    if (yPositions[i] < yMin){
+                        yMin = yPositions[i];
+                    }
+
+                    if (yPositions[i] > yMax){
+                        yMax = yPositions[i];
+                    }
+                }
+
+                if (yMax - yMin < 10 && rigidBody.velocity.y > 5){
+                    rigidBody.velocity.y = 0;
+                }
+
+            }
+        }
+
+
         this.isInDevMode = false;
+
+        this.previousYPositions = [];
     }
 
     Update(dt) {
@@ -124,6 +155,12 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
             rb.velocity = new Physics.Vec2(0, 0);
             this.entity.getComponent("transform").position = rb.position;
         }
+
+        this.previousYPositions.push(rb.position.y);
+        if (this.previousYPositions.length > 10){
+            this.previousYPositions.shift();
+        }
+
 
         
         window.addEventListener('enableDevMode', () => {
