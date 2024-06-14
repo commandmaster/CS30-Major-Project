@@ -45,6 +45,9 @@ class ScriptingComponent extends Component {
         for (const script of this.scripts.values()) {
             if (typeof script.End === 'function') script.End(); // Call the end method of the script
         }
+
+        // Delete the scripts
+        this.scripts = null;
     }
 }
 

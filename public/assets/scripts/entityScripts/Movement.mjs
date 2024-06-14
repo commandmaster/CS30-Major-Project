@@ -62,7 +62,7 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
                     }
                 }
 
-                if (yMax - yMin < 10 && rigidBody.velocity.y > 5){
+                if (yMax - yMin < 3 && rigidBody.velocity.y > 5){
                     rigidBody.velocity.y = 0;
                 }
 
