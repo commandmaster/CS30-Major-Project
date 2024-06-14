@@ -19,7 +19,11 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
 
         this.#lastAttackTime = performance.now();
 
-        this.entity.components.get('transform').position = {x: 750, y: 0};
+        const player = this.engineAPI.getCurrentLevel().getEntity('player');
+        this.entity.components.get('transform').position = {x: player.components.get('transform').position.x + MathPlus.randomRange(-500, 500), y: player.components.get('transform').position.y + MathPlus.randomRange(-500, 500)};
+        this.entity.components.get('transform').position.y = Math.min(this.entity.components.get('transform').position.y, 0);
+
+        
 
         this.entity.createComponent({"type": "animator"});
         const animator = this.entity.components.get('animator'); 
@@ -146,7 +150,7 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
             rb.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
                 if (collisionData.collider1.tags.has('player') || collisionData.collider2.tags.has('player')) {
                     const scriptInstances = this.engineAPI.getCurrentLevel().getEntity('player').components.get('scripting').scripts;
-                    scriptInstances.get('Movement').inflictDamage(1);
+                    scriptInstances.get('Movement').inflictDamage(5);
                     this.engineAPI.getCurrentLevel().removeEntity(projectile.name);
                 }
 

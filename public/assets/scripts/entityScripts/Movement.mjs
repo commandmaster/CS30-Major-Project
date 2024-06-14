@@ -1,5 +1,6 @@
 import { ScriptingAPI } from "../../../FrontendModules/scriptingModule.mjs"; 
 import { MathPlus } from "../../../SharedCode/mathPlus.mjs";
+import { RenderAPI } from "../../../FrontendModules/renderModule.mjs";
 const Physics = ScriptingAPI.Physics;
 
 
@@ -10,7 +11,8 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
 
     Start() {
         this.canPlayerJump = true;
-
+        this.maxHealth = 100;
+        this.health = this.maxHealth;
 
         const inputAPI = this.engineAPI.getAPI("input");
         const inputModule = this.engineAPI.getModule("input");
@@ -42,8 +44,14 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         this.isInDevMode = false;
     }
 
-    Update() {
+    Update(dt) {
+        this.health += 0.005; // Regeneration
+        this.health = MathPlus.clamp(this.health, 0, this.maxHealth);
 
+        if (this.health <= 0){
+            this.health = 0;
+            this.engineAPI.getCurrentLevel().levelManager.initiateGameOver();
+        }
 
         const inputAPI = this.engineAPI.getAPI("input");
         const rigidbody = this.entity.getComponent("rigidbody");
@@ -87,23 +95,45 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         const mousePos = inputAPI.getMousePosition();
         const worldPos = camera.screenToWorld(mousePos.x, mousePos.y);
 
+        // Create health bar
+        const renderAPI = this.engineAPI.getAPI("render");
+        const renderFunc = (canvas, ctx) => {
+            ctx.beginPath();
+            ctx.fillStyle = `rgb(${MathPlus.mapRange(this.health, this.maxHealth, 0, 0, 255)}, ${MathPlus.mapRange(this.health, this.maxHealth, 0, 255, 0)}, 0)`;
+
+            // Hug right side of screen 
+
+            // Round the corners of the health bar
+            ctx.roundRect(canvas.width - 200 * this.health/this.maxHealth, 0, 200 * this.health/this.maxHealth, 20, 4);
+            
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        const task = new RenderAPI.RenderTask(renderFunc);
+        renderAPI.addTask(task, true);
+
+
         /////////////////////////////
         /// TESTING ONLY ///////////
         /////////////////////////////
 
-        if (inputAPI.getInputDown("teleport")){
+
+        if (inputAPI.getInputDown("teleport") && this.isInDevMode){
             rb.position = new Physics.Vec2(worldPos.x, worldPos.y);
             rb.velocity = new Physics.Vec2(0, 0);
             this.entity.getComponent("transform").position = rb.position;
         }
 
         
-        window.on('enableDevMode', () => {
+        window.addEventListener('enableDevMode', () => {
             this.isInDevMode = true; 
+            this.entity.components.get('animator').hide(); // Hide the player animation
         });
 
-        window.on('disableDevMode', () => {
+        window.addEventListener('disableDevMode', () => {
             this.isInDevMode = false;
+            this.entity.components.get('animator').show(); // Show the player animation
         });
 
         if (!this.isInDevMode) {
@@ -118,7 +148,7 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
     }
 
     inflictDamage(damage){
-        console.log("Inflicting damage: " + damage);
+        this.health -= damage;
     }
 }
 

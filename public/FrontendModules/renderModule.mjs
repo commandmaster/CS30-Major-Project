@@ -60,6 +60,8 @@ class Camera{
 }
 
 class AnimatorComponent extends Component{
+    #isHidden = false;
+
     constructor(entity, parentModule, engineAPI, componentConfig){
         super(entity, parentModule, engineAPI, componentConfig);
 
@@ -73,6 +75,14 @@ class AnimatorComponent extends Component{
         return this.animations[name];
     }
 
+    hide(){
+        this.#isHidden = true;
+    }
+
+    show(){
+        this.#isHidden = false;
+    }
+
     playAnimation(animation){
         this.currentAnimation = this.animations[animation];
         this.currentAnimation.frameIndex = 0;
@@ -82,7 +92,9 @@ class AnimatorComponent extends Component{
         return this.animations[name];
     }
 
-    render(x, y, angle = 0){
+    render(x, y, angle = 0){    
+        if (this.#isHidden) return;
+
         const renderFunc = (canvas, ctx) => {
             if (this.currentAnimation !== null) this.currentAnimation.render(ctx, x, y, angle);
         }
@@ -118,7 +130,6 @@ class Animation{
 
         this.#lastFrameUpdate = performance.now();
         this.frameIndex = 0;
-
 
     }
 

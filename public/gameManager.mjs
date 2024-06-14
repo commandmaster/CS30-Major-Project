@@ -1,5 +1,4 @@
-import { EntityAPI } from "./frontendModules/entityModule.mjs";
-import { Level } from "./frontendModules/engine.mjs";
+import { Level } from "./FrontendModules/engine.mjs"; 
 import * as Physics from "./SharedCode/physicsEngine.mjs" 
 
 export default class GameManager {

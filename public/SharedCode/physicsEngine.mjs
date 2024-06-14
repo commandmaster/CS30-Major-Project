@@ -916,6 +916,7 @@ class Rigidbody{
 
 
         if (!(this.#mass === 0 || this.#mass === Infinity || this.isStatic === true)) { 
+
             // Update the linear velocity
             this.#velocity.add(this.#acceleration.clone().add(accelerationFromForces).scale(dt));
             

@@ -109,32 +109,23 @@ export class PhysicsModule extends Module{
     }
 
     start(){
-    
+        this.shouldDebugDraw = false;
 
-        window.addEventListener('mousedown', (e) => {
-            
-            const camera = this.engineAPI.getAPI('render').getCamera();
-            const worldPos = camera.screenToWorld(e.clientX, e.clientY);
-            
-
-            // if (e.button === 1){
-            //     for (let i = 0; i < 100; i++){
-            //         const newRB = new Rigidbody(new Vec2(worldPos.x + i * 5, worldPos.y + Math.random()*150 - 75), 0, 1, 1, []);
-            //         newRB.addCollider(new CircleCollider(newRB, 0, 0, 1, 20));
-            //         this.addRigidbody(newRB);
-            //     }
-                
-            // }
-            
+        window.addEventListener('enableDevMode', () => {
+            this.shouldDebugDraw = true;
         });
 
-    
+        window.addEventListener('disableDevMode', () => {
+            this.shouldDebugDraw = false;
+        });
 
     }
 
     update(dt){
         this.physicsEngine.stepSimulation(dt);
-        this.debugDraw();
+        if (this.shouldDebugDraw){
+            this.debugDraw();
+        }
     }
 
     addRigidbody(rigidBody){

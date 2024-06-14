@@ -42,6 +42,12 @@ class ScriptingComponent extends Component {
             script.Update(dt);
         }
     }
+
+    end(){
+        for (const script of this.scripts.values()) {
+            if (typeof script.End === 'function') script.End();
+        }
+    }
 }
 
 

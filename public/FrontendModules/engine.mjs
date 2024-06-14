@@ -93,6 +93,12 @@ export class Level{
         return this.entities.find(entity => entity.name === name);
     }
 
+    clearEntities(){
+        // Clear all entities
+        this.entities.forEach(entity => entity.end());
+        this.entities = [];
+    }
+
     removeEntity(name){
         // Remove an entity by name
         // Returns the entity if it exists, otherwise returns undefined

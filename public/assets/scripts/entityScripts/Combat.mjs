@@ -91,18 +91,18 @@ export default class Combat extends ScriptingAPI.Monobehaviour {
                 gunPositionOffset: {x: 0, y: 100},
                 recoilData: new RecoilData({
                     knockBackStrength: 100,
-                    rotationalRecoilSpeed: 0.3,
+                    rotationalRecoilSpeed: 0.15,
                     verticalRecoilSpeed: 0.1,
-                    rotationalMaxRecoil: 30,
+                    rotationalMaxRecoil: 18,
                     verticalMaxRecoil: 5,
-                    rotationalRecoilRandom: 1.1,
+                    rotationalRecoilRandom: 0.5,
                     verticalRecoilRandom: 0.2,
                     recoilRandomInterval: 0.35
                 }),
-                fireRate: 8,
+                fireRate: 12,
                 bulletSize: 3,
                 bulletSpeed: 2200,
-                bulletDamage: 1
+                bulletDamage: 1 // Not implemented yet
             },
             [
                 new GunAnimationData("shooting", "./assets/spriteSheets/assaultShot.png", 109, 41, 16, 100, {x: -70, y: -30}, {x: -70, y: -30}, {x: 0, y: 0}, 1.8),

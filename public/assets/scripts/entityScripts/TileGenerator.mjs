@@ -261,6 +261,11 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         if (this.editorMode) this.editor(); 
     }
 
+    End() {
+        const phyModule = this.engineAPI.getModule("physics");
+        phyModule.physicsEngine.deleteRigidbody(this.tileRB);
+    }
+
    
 
     renderTiles(){

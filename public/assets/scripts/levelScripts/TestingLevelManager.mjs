@@ -29,9 +29,26 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         const inputModule = this.engineAPI.getModule('input');
         inputModule.addKeyboardInput("start", "bool").addKeybind(" ");
         this.started = false;
+
+        this.gameOver = false;
     }
 
     Update(dt) {
+        if (this.gameOver) {
+            if (this.level.entities.length > 0) this.level.clearEntities();
+
+            const inputAPI = this.engineAPI.getAPI('input');
+            if (inputAPI.getInputDown('start')) {
+                this.gameOver = false;
+                this.started = false;
+                this.level.clearEntities();
+            }
+
+
+            this.gameOverScreen();
+            return;
+        }
+
         if (!this.started) {
             const inputAPI = this.engineAPI.getAPI('input');
             if (inputAPI.getInputDown('start')) {
@@ -42,25 +59,25 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
             // // Create Start Screen
             const renderAPI = this.engineAPI.getAPI('render');
             const camera = renderAPI.getCamera();
-            const fov = camera.frameOfView;
+  
 
             const renderFunc = (canvas, ctx) => {
 
                 ctx.fillStyle = "black";
-                ctx.fillRect(-fov.width/2 , -fov.height/2, fov.width, fov.height);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = `rgb(${Math.sin(performance.now()/600)*70 + 180}, 0, ${Math.sin(performance.now()/600)*255}, ${Math.random() + 0.8})`;
-                ctx.font = "80px Monospace";
+                ctx.font = "65px Monospace";
                 ctx.textAlign = "center";
-                ctx.fillText("Tower Jump", 0, Math.sin(performance.now()/600)*80 - 200);
+                ctx.fillText("Tower Jump", canvas.width/2, Math.sin(performance.now()/600)*80 + 200);
 
                 ctx.font = "42px Monospace";
-                ctx.fillText("Press Space to Start", 0, Math.sin(performance.now()/600)*30 + 100);
+                ctx.fillText("Press Space to Start", canvas.width/2, Math.sin(performance.now()/600)*30 + 500);
 
 
             }
             const renderTask = new RenderAPI.RenderTask(renderFunc);
-            renderAPI.addTask(renderTask);
+            renderAPI.addTask(renderTask, true);
         }
 
         else {
@@ -71,15 +88,69 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
 
 
     End() {
-        
+        // Clear demon interval
+        clearInterval(this.demonInterval);
+    }
+
+    initiateGameOver() {
+        this.gameOver = true;
+        this.level.end();
     }
 
     levelUpdate(dt) {
+        this.timer += dt;
+        this.height = -1 * this.level.getEntity('player').components.get('transform').position.y;
+        this.height = Math.max(0, this.height);
 
+        const renderAPI = this.engineAPI.getAPI('render');
+      
+        const renderFunc = (canvas, ctx) => {
+            ctx.fillStyle = "white";
+            ctx.font = "24px Monospace";
+            ctx.textAlign = "left";
+            ctx.fillText(`Height: ${Math.floor(this.height)}`, 0, 20);
+
+            ctx.fillText(`Time: ${this.timer.toFixed(1)}`, 0, 40);
+
+        }
+
+        const renderTask = new RenderAPI.RenderTask(renderFunc);
+        renderAPI.addTask(renderTask, true);
     }
 
+    gameOverScreen() {
+        const renderAPI = this.engineAPI.getAPI('render');
+        const camera = renderAPI.getCamera();
+        const fov = camera.frameOfView;
+
+        const renderFunc = (canvas, ctx) => {
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = `rgb(${Math.sin(performance.now()/600)*70 + 180}, 0, ${Math.sin(performance.now()/600)*255}, ${Math.random() + 0.8})`;
+            ctx.font = "80px Monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("Game Over", canvas.width/2, Math.sin(performance.now()/600)*30 + 200);
+
+            ctx.font = "42px Monospace";
+            ctx.fillText("Press Space to Restart", canvas.width/2, Math.sin(performance.now()/600)*20 + 350);    
+
+            ctx.font = "24px Monospace";
+            ctx.fillText(`Height: ${Math.floor(this.height)}`, canvas.width/2, 550);
+            ctx.fillText(`Time: ${this.timer.toFixed(1)}`, canvas.width/2, 600);
+        }
+
+        const renderTask = new RenderAPI.RenderTask(renderFunc);
+        renderAPI.addTask(renderTask, true);
+    }
 
     startLevel() {
+        this.height = 0;
+        this.timer = 0;
+
+
+
         const entityAPI = this.engineAPI.getAPI('entity')
         const player = new EntityAPI.Entity(entityAPI, 'player')
        
@@ -112,13 +183,35 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         this.level.addEntity(assaultRifle);
 
 
+        const gameOver = new EntityAPI.Entity(entityAPI, 'gameOver');
+        const gameOverRigidBody = new Physics.Rigidbody(new Physics.Vec2(8330, -7725), 0, Infinity, 0.1, []);
+        const gameOverCollider = new Physics.CircleCollider(gameOverRigidBody, 0, 0, 1, 50);
+        gameOverCollider.isTrigger = true;
+        gameOverRigidBody.addCollider(gameOverCollider);
+        gameOverRigidBody.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
+            if (collisionData.collider1.tags.has('player') || collisionData.collider2.tags.has('player')) {
+                this.gameOver = true;
+                this.level.clearEntities();
+            }
+        }
+
+        gameOver.createComponent({"type": "rigidbody", "rigidBody": gameOverRigidBody});
+        this.level.addEntity(gameOver);
        
         
         // Enemy Logic
-        const demon1 = new EntityAPI.Entity(entityAPI, 'demon1');
-        demon1.createComponent({"type": "scripting", "scriptNames": ["Demon"]});
-        
-        this.level.addEntity(demon1);
+
+        this.demonInterval = setInterval(() => {
+            this.spawnDemon();
+        }, 6000);
+
+    }
+
+    spawnDemon() {
+        const entityAPI = this.engineAPI.getAPI('entity');
+        const demon = new EntityAPI.Entity(entityAPI, `demon${crypto.randomUUID()}}`);
+        demon.createComponent({"type": "scripting", "scriptNames": ["Demon"]});
+        this.level.addEntity(demon);
     }
 }
 
