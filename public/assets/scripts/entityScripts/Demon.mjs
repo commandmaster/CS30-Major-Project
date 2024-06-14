@@ -49,7 +49,11 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
         // Create the rigidbody component
         const transformPos = this.entity.components.get('transform').position;
         const rigidBody = new Physics.Rigidbody(new Vec2(transformPos.x, transformPos.y), 0, 5, 0.1, []);
-        rigidBody.addCollider(new Physics.CircleCollider(rigidBody, 33, 35, 1, 30));
+
+        const demonCollider = new Physics.CircleCollider(rigidBody, 33, 35, 1, 30);
+        demonCollider.tags.add('demon');
+        demonCollider.tags.add('enemy');
+        rigidBody.addCollider(demonCollider);
 
         rigidBody.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
             // Check if the demon is colliding with a bullet

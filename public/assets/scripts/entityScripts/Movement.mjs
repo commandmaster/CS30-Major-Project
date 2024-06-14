@@ -110,7 +110,7 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         this.canPlayerJump = false;
         for (let collision of currentCollisions){
             const cData = collision.collisionData;
-            if ((cData.collider1.tags.has('groundCheck') || cData.collider2.tags.has('groundCheck')) && (cData.collider1.tags.has('ground') || cData.collider2.tags.has('ground'))){
+            if ((cData.collider1.tags.has('groundCheck') || cData.collider2.tags.has('groundCheck')) && (cData.collider1.tags.has('ground') || cData.collider2.tags.has('ground') || cData.collider1.tags.has('demon') || cData.collider2.tags.has('demon'))){
                 this.canPlayerJump = true;
             }
         }
@@ -176,6 +176,10 @@ export default class Movement extends ScriptingAPI.Monobehaviour {
         if (!this.isInDevMode) {
             camera.x = this.entity.getComponent("rigidbody").rigidBody.position.x;
             camera.y = this.entity.getComponent("rigidbody").rigidBody.position.y;
+        }
+
+        else{
+            this.health = this.maxHealth;
         }
         
 

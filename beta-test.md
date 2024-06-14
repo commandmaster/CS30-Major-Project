@@ -1,5 +1,5 @@
 # CS - Feedback
-- There is some sort of bug where you will fall super quickly when stepping off a platform.
+- There is some sort of bug where you will fall super quickly when stepping off a platform. (FIXED)
 - There is a movement glitch where if you are holding a sideways movement key and quickly press and hold the opposite direction, you fill freeze for a small amount of time.
 - The animations look good and the shooting is well made, but the game is missing a bit of pzazz. 
 

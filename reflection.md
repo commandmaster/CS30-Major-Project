@@ -1,8 +1,7 @@
 # Reflection
 
 ## What advice would I give to myself if I were to start this project again?
-- I would tell myself to focus on building key features of the product I want to build and not to worry about perfection. I would have scrapped the multiplayer idea in favour
-of a simpler single-player game with a better player experience. I would have moved some more needs-to-have features into the nice-to-have section to relieve some of the restrictions
+- I would tell myself to focus on building key features of the product I want to build and not to worry about perfection. I would have scrapped the multiplayer idea in favour of a simpler single-player game with a better player experience. I would have moved some more needs-to-have features into the nice-to-have section to relieve some of the restrictions
 I set upon myself.
 - Spend more time intentionally thinking through each aspect of the game before attempting to code it. 
 - Avoid preemptive abstraction in favour of a concrete solution. In many of the problems that I had, it would've been a better idea to create something and refactor it later. Doing this
@@ -22,7 +21,6 @@ With countless known and unknown bugs, I completely pivoted my multiplayer fight
 
 ## Were there any problems you could not solve?
 - I couldn't get multiplayer to work.
-- There is a speed build-up bug from gravity that is super annoying and would require continuous collision detection to fix.
 
 ## Things about my project that I'm proud of
 - I'm proud of the physics engine.

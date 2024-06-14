@@ -202,6 +202,14 @@ export default class TestingLevelManager extends ScriptingAPI.LevelManager {
         // Enemy Logic
 
         this.demonInterval = setInterval(() => {
+            let maxDemons = 5;
+            
+            for (let entity of this.level.entities) {
+                if (entity.name.includes('demon')) maxDemons--;
+            }
+
+            if (maxDemons <= 0) return;
+
             this.spawnDemon();
         }, 6000);
 
