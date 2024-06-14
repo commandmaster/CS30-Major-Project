@@ -58,6 +58,7 @@ export class RigidbodyComponent extends Component{
             rigidBody.addCollider(createCollider(colliderData));
         }
 
+        // Create the collider objects
         function createCollider(colliderData){
             switch(colliderData.type){
                 case 'circle':
@@ -112,10 +113,12 @@ export class PhysicsModule extends Module{
         this.shouldDebugDraw = false;
 
         window.addEventListener('enableDevMode', () => {
+            // Enable debug draw - this event is triggered by the running devMode() in the chrome console
             this.shouldDebugDraw = true;
         });
 
         window.addEventListener('disableDevMode', () => {
+            // Disable debug draw - this event is triggered by the running devMode() in the chrome console
             this.shouldDebugDraw = false;
         });
 
@@ -133,6 +136,8 @@ export class PhysicsModule extends Module{
     }
 
     debugDraw(){
+        // Draw the bounding boxes of the colliders using the render API
+
         const debugBoudingBox = false;
 
         for (const body of this.physicsEngine.rigidBodies){

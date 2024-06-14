@@ -23,7 +23,7 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
         this.entity.components.get('transform').position = {x: player.components.get('transform').position.x + MathPlus.randomRange(-500, 500), y: player.components.get('transform').position.y + MathPlus.randomRange(-500, 500)};
         this.entity.components.get('transform').position.y = Math.min(this.entity.components.get('transform').position.y, 0);
 
-        
+        // Create the animator component 
 
         this.entity.createComponent({"type": "animator"});
         const animator = this.entity.components.get('animator'); 
@@ -46,11 +46,13 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
 
         animator.playAnimation('idle');
 
+        // Create the rigidbody component
         const transformPos = this.entity.components.get('transform').position;
         const rigidBody = new Physics.Rigidbody(new Vec2(transformPos.x, transformPos.y), 0, 5, 0.1, []);
         rigidBody.addCollider(new Physics.CircleCollider(rigidBody, 33, 35, 1, 30));
 
         rigidBody.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
+            // Check if the demon is colliding with a bullet
             const collider1 = collisionData.collider1;
             const collider2 = collisionData.collider2;
 
@@ -64,11 +66,13 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
 
     Update(dt) {
         if (this.isDead) {
+            // Stop the demon from moving
             const rb = this.entity.components.get('rigidbody').rigidBody;
             rb.velocity = new Vec2(0, 0);
             const currentFrame = this.entity.components.get('animator').currentAnimation.frameIndex;
             const lastFrame = this.entity.components.get('animator').currentAnimation.frameCount - 1;
 
+            // Remove the demon after the death animation has played
             if (currentFrame >= lastFrame) {
                 const level = this.engineAPI.getCurrentLevel();
                 level.removeEntity(this.entity.name);
@@ -78,6 +82,7 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
         }
 
         if (this.health <= 0) {
+            // Play the death animation and then remove the demon
             this.die();
             return;
         }
@@ -132,6 +137,8 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
             // Spawn a projectile
             this.#lastAttackTime = performance.now();
 
+
+            // Create the projectile
             const projectile = new EntityAPI.Entity(this.engineAPI.getAPI('entity'), 'demonsProjectile'+crypto.randomUUID());
             projectile.createComponent({"type": "scripting", "scriptNames": ["Bullet"]});
             projectile.createComponent({"type": "animator"});
@@ -140,6 +147,7 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
             projectile.components.get('animator').getAnimation('idle').flipPoint = {x: -15, y: -16};
             projectile.components.get('animator').playAnimation('idle');
 
+            // Create the rigidbody
             const rb = new Physics.Rigidbody(new Vec2(demonPos.x, demonPos.y + 30), 0, 5, 0.1, []);
             rb.addCollider(new Physics.CircleCollider(rb, 16, 16, 1, 5)).isTrigger = true;
             rb.velocity = Vec2.scale(direction, 400);
@@ -147,6 +155,7 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
 
             projectile.createComponent({"type": "rigidbody", "rigidBody": rb});
 
+            // Set the onCollisionEnter function
             rb.onCollisionEnterFunc = (rigidBody, collisionData, otherBody) => {
                 if (collisionData.collider1.tags.has('player') || collisionData.collider2.tags.has('player')) {
                     const scriptInstances = this.engineAPI.getCurrentLevel().getEntity('player').components.get('scripting').scripts;
@@ -161,7 +170,7 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
                 
             }
 
-            projectile.components.get('transform').rotation = (Vec2.angle(Vec2.scale(direction, -1))) * 180 / Math.PI;
+            projectile.components.get('transform').rotation = (Vec2.angle(Vec2.scale(direction, -1))) * 180 / Math.PI; // Set the rotation of the projectile
 
             this.engineAPI.getCurrentLevel().addEntity(projectile);
 
@@ -171,10 +180,10 @@ export default class Demon extends ScriptingAPI.Monobehaviour {
         }
 
         else if (currentAnimation.name !== 'idle') {
-            this.entity.components.get('animator').playAnimation('idle');
+            this.entity.components.get('animator').playAnimation('idle'); // Play the idle animation
         }
 
-        this.entity.components.get('rigidbody').rigidBody.velocity = Vec2.scale(direction, this.speed);
+        this.entity.components.get('rigidbody').rigidBody.velocity = Vec2.scale(direction, this.speed); // Move the demon towards the player
     }
    
 }

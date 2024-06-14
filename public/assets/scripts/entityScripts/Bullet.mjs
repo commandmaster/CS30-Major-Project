@@ -11,15 +11,15 @@ export default class Bullet extends ScriptingAPI.Monobehaviour {
     }
 
     Start() {
-        const range = 5000;
+        const range = 5000; // Range of bullet before it despawns
 
-        const rbSpeed = this.entity.getComponent("rigidbody").rigidBody.velocity.mag;
-        const timeToTarget = range / rbSpeed;
+        const rbSpeed = this.entity.getComponent("rigidbody").rigidBody.velocity.mag; // get the speed of the bullet
+        const timeToTarget = range / rbSpeed; // Calculate the time it will take for the bullet to reach the target
 
         const lifetime = timeToTarget; // seconds
         setTimeout(() => {
-            this.engineAPI.getCurrentLevel().removeEntity(this.entity.name);
-        }, lifetime * 1000);
+            this.engineAPI.getCurrentLevel().removeEntity(this.entity.name); // Remove the bullet after the lifetime
+        }, lifetime * 1000 /* Convert seconds to milliseconds */);
     }
 
     Update(dt) {

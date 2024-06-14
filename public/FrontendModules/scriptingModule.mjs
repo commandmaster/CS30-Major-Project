@@ -18,34 +18,32 @@ import * as Audio from "../FrontendModules/audioModule.mjs";
 class ScriptingComponent extends Component {
     constructor(entity, parentModule, engineAPI, componentConfig) {
         super(entity, parentModule, engineAPI, componentConfig);
-
         
-        this.scriptNames = componentConfig.scriptNames;
+        this.scriptNames = componentConfig.scriptNames; // Array of script names
 
-        this.scripts = new Map();
+        this.scripts = new Map(); // Map of script names to script instances
 
-        
         const scriptingAPI = this.engineAPI.getAPI("scripting"); // Get the scripting API
         for (const scriptName of componentConfig.scriptNames) {
-            this.scripts.set(scriptName, scriptingAPI.instantiateEntityScript(entity, scriptName));
+            this.scripts.set(scriptName, scriptingAPI.instantiateEntityScript(entity, scriptName)); // Instantiate the script
         }
     }
 
     start(){
         for (const script of this.scripts.values()) {
-            script.Start();
+            script.Start(); // Call the start method of the script
         }
     }
 
     update(dt){
         for (const script of this.scripts.values()) {
-            script.Update(dt);
+            script.Update(dt); // Call the update method of the script
         }
     }
 
     end(){
         for (const script of this.scripts.values()) {
-            if (typeof script.End === 'function') script.End();
+            if (typeof script.End === 'function') script.End(); // Call the end method of the script
         }
     }
 }
@@ -123,6 +121,9 @@ export class ScriptingAPI extends ModuleAPI {
     static Audio = Audio;
 
     static async loadScript(scriptPath) {
+        // Load the script from the path
+        // This is a helper function to load a script from a path
+
         return new Promise((resolve, reject) => {
             const url = new URL(scriptPath, window.location.href).href;
 
@@ -140,13 +141,13 @@ export class ScriptingAPI extends ModuleAPI {
     }
 
     instantiateLevelManager(levelManagerName, level, engineAPI){
-        const levelManagerClasses = this.engineAPI.getModule("scripting").levelManagerClasses;
-        if (!levelManagerClasses[levelManagerName]) throw new Error(`LevelManager ${levelManagerName} not found`);
-        return new levelManagerClasses[levelManagerName](engineAPI, level);
+        const levelManagerClasses = this.engineAPI.getModule("scripting").levelManagerClasses; // Get the level manager classes
+        if (!levelManagerClasses[levelManagerName]) throw new Error(`LevelManager ${levelManagerName} not found`); // Check if the level manager exists
+        return new levelManagerClasses[levelManagerName](engineAPI, level); // Instantiate the level manager
     }
 
     instantiateEntityScript(entity, scriptName){
-        const entityClasses = this.engineAPI.getModule("scripting").entityClasses;
+        const entityClasses = this.engineAPI.getModule("scripting").entityClasses; // Get the entity classes
         
         if (!entityClasses[scriptName]) throw new Error(`Entity script ${scriptName} not found`);
         return new entityClasses[scriptName](this.engineAPI, entity);
@@ -164,6 +165,8 @@ export class ScriptingModule extends Module {
     }
 
     async preload() {
+        // Preload the scripting module
+
         // Load scripts
         return new Promise(async (resolve, reject) => {
             function waitForCondition(condition) {
@@ -177,6 +180,7 @@ export class ScriptingModule extends Module {
                 });
             }
             
+            // Wait for the asset module to load
             await waitForCondition(() => this.engineAPI.getModule("asset").assetConfig !== undefined);
             const scripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script" && asset.subType === "levelManager");
             for (const script of scripts) {
@@ -184,6 +188,7 @@ export class ScriptingModule extends Module {
                 this.levelManagerClasses[script.name] = scriptClass;
             }
 
+            // Wait for the asset module to load
             const entityScripts = this.engineAPI.getModule("asset").assetConfig.filter(asset => asset.type === "script" && asset.subType === "entity");
             for (const script of entityScripts) {
                 const scriptClass = await ScriptingAPI.loadScript(script.path);

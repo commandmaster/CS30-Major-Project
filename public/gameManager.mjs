@@ -16,6 +16,8 @@ export default class GameManager {
     }
 
     Start(){
+        // Load the test level
+
         const entityAPI = this.engineAPI.getAPI("entity");
         const testLevel = new Level(this.engineAPI, [], "testLevel");    
         entityAPI.engine.loadLevel(testLevel);  

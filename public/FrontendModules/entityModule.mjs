@@ -234,6 +234,7 @@ class Entity {
     }
 
     serialize() {
+        // Serialize the entity and its components
         let serizedComponents = {};
         this.components.forEach((component, key) => {
             serizedComponents[key] = component.serialize();
@@ -248,14 +249,15 @@ class Entity {
 
         const newEntity = new Entity(entityAPI, serializedEntity);
 
-        if (position instanceof Vec2 && newEntity.components.transform) newEntity.components.transform.position = position;
-        if (rotation instanceof Number && newEntity.components.transform) newEntity.components.transform.rotation = rotation;
-        if (velocity instanceof Vec2 && newEntity.components.rigidbody) newEntity.components.rigidbody.velocity = velocity;
+        if (position instanceof Vec2 && newEntity.components.transform) newEntity.components.transform.position = position; // Set the position of the entity
+        if (rotation instanceof Number && newEntity.components.transform) newEntity.components.transform.rotation = rotation; // Set the rotation of the entity
+        if (velocity instanceof Vec2 && newEntity.components.rigidbody) newEntity.components.rigidbody.velocity = velocity; // Set the velocity of the entity
 
         return newEntity;
     }
 }
 
+// NOTE: These are not used as the level class controls the entities (updating, adding, removing, etc.)
 export class EntityAPI extends ModuleAPI {
     static Entity = Entity;
     constructor(engineAPI) {

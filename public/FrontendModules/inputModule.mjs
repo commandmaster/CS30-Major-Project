@@ -1,22 +1,27 @@
 import { ModuleAPI, Module } from "./moduleBase.mjs";
 
+// NOTE: There are no gamepad inputs implemented in the current version of the engine.
 export class InputAPI extends ModuleAPI {
     constructor(engineAPI) {
         super(engineAPI);
     }
 
+    // Get the current mouse position
     getMousePosition(){
         return this.engineAPI.getModule('input').mousePosition;
     }
 
+    // Get the value of a keyboard input
     getKeyboardInput(name){
         return this.engineAPI.getModule('input').keyboardInputs[name].value;
     }
 
+    // Get the value of a mouse input
     getMouseInput(name){
         return this.engineAPI.getModule('input').mouseInputs[name].value;
     }
 
+    // Get the value of a gamepad input
     getInputDown(name){
         // frame allowance is the number a buffer of frames to allow the input to be considered down
        
@@ -35,6 +40,7 @@ export class InputAPI extends ModuleAPI {
         }
     }
 
+    // NOTE: This is a placeholder function for getting gamepad input. Gamepad input is not implemented in the current version of the engine.
     getGamepadInput(name){
         console.warn('Gamepad input not implemented');
         return this.engineAPI.getModule('input').gamepadInputs[name].value;
@@ -46,6 +52,7 @@ export class InputModule extends Module {
         super(engineAPI);
     }
 
+    // export the inputs so they can be compressed (ussally used for networking) <---- I Did not implement the server side of the engine so this is not needed but I will leave it in for future use
     exportInputs(){
         const inputAPI = this.engineAPI.getAPI('input');
 
@@ -57,9 +64,6 @@ export class InputModule extends Module {
             input.pressed = inputAPI.getInputDown(input.name) !== input.defaultValue;
         }
 
-        // for (const input of Object.values(this.gamepadInputs)){
-        //     input.pressesed = this.engineAPI.getAPI('input').getInputDown(input.name);
-        // }
 
         return {
             keyboardInputs: this.keyboardInputs,
@@ -76,9 +80,7 @@ export class InputModule extends Module {
 
         this.#setupListeners();
 
-        this.gamePads = navigator.getGamepads();
-
-        
+        this.gamePads = navigator.getGamepads(); // get the gamepads that are connected to the system <---- NOTE: This is not implemented in the current version of the engine (Gamepad input is not implemented in the current version of the engine.)
     }
 
     #setupListeners(){
@@ -143,7 +145,9 @@ export class InputModule extends Module {
         });
     }
 
-    addKeyboardInput(name, type='bool'){
+    addKeyboardInput(name, type='bool'){    
+        // Add a new input to the keyboard inputs
+
         if (type === 'bool') {
             this.keyboardInputs[name] = new BoolInput(name);
         } else if (type === 'axis') {
@@ -154,11 +158,13 @@ export class InputModule extends Module {
     } 
 
     addMouseInput(name){
+        // Add a new input to the mouse inputs
         this.mouseInputs[name] = new MouseInput(name);
 
         return this.mouseInputs[name];
     }
 
+    // NOTE: This is a placeholder function for adding gamepad input. Gamepad input is not implemented in the current version of the engine.
     addGamepadInput(name, button){
         throw new Error('Not implemented');
     }
@@ -175,11 +181,13 @@ class BoolInput {
         this.binds = [];
     }
 
+    // Add a keybind to the bool input
     addKeybind(key){
         this.binds.push({key, value: true});
         return this;
     }
 
+    // Remove a keybind from the bool input
     removeKeybind(key){
         this.binds = this.binds.filter(b => b.key !== key);
         return this;
@@ -197,6 +205,7 @@ class AxisInput {
         this.binds = [];
     }
 
+    // Add a keybind to the axis input
     addKeybind(key, axisValue){
         if (axisValue > 1 || axisValue < -1) throw new Error('Axis value must be between -1 and 1');
         if (typeof axisValue !== 'number') throw new Error('Axis value must be a number');
@@ -206,6 +215,7 @@ class AxisInput {
         return this;
     }
 
+    // Remove a keybind from the axis input
     removeKeybind(key){
         this.binds = this.binds.filter(b => b.key !== key);
 
@@ -218,13 +228,15 @@ class MouseInput {
         this.name = name;
         this.value = false;
 
-        this.defaultValue = false;
+        this.defaultValue = false; 
         this.needsReset = false;
 
         this.binds = [];
     }
 
     addKeybind(button){
+        // Add a keybind to the mouse input
+
         if (typeof button === 'string') button = parseInt(button);
         if (button > 2 || button < 0) throw new Error('Mouse button must be between 0 and 2');
         if (typeof button !== 'number') throw new Error('Mouse button must be a number (or a string that can be parsed to a number)');
@@ -234,6 +246,8 @@ class MouseInput {
     }
 
     removeKeybind(button){
+        // Remove a keybind from the mouse input
+
         this.binds = this.binds.filter(b => b.button !== button);
         return this;
     }

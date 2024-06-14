@@ -24,6 +24,7 @@ export class EngineAPI {
     }
 
     loadAPIs() {
+        // Load all the APIs
         this.APIs.audio = new AudioAPI(this);
         this.APIs.input = new InputAPI(this);
         this.APIs.render = new RenderAPI(this);
@@ -55,12 +56,14 @@ export class EngineAPI {
     }
 
     getModule(module) {
+        // Get a module by name
         if (typeof this.engine.modules[module] === "undefined")
             throw new Error(`Module ${module} does not exist (undefined)`);
         return this.engine.modules[module];
     }
 
     getCurrentLevel(){
+        // Get the current level
         return this.engine.currentLevel;
     }
 }
@@ -79,6 +82,7 @@ export class Level{
     }
 
     addEntity(entity){
+        // Add an entity to the level
         this.entities.push(entity);
 
         if (this.alreadyStarted.has(entity)) return;
@@ -116,11 +120,13 @@ export class Level{
     }
 
     start(){
+        // Start the level
         this.levelManager.Start();
         for(let entity of this.entities){
             if (this.alreadyStarted.has(entity)) continue;
             entity.start();
 
+            // Add the entity to the set of entities that have already been started
             this.alreadyStarted.add(entity);
         }
     }
@@ -145,9 +151,9 @@ export class Level{
     }
 
     static fromJSON(engineAPI, jsonObject){
-        const position = new Vec2(jsonObject.components.transform.position.x, jsonObject.components.transform.position.y);
-        const rotation = jsonObject.components.transform.rotation;
-        const velocity = new Vec2(jsonObject.components.rigidbody.velocity.x, jsonObject.components.rigidbody.velocity.y);
+        const position = new Vec2(jsonObject.components.transform.position.x, jsonObject.components.transform.position.y); // Get the position of the level
+        const rotation = jsonObject.components.transform.rotation; // Get the rotation of the level
+        const velocity = new Vec2(jsonObject.components.rigidbody.velocity.x, jsonObject.components.rigidbody.velocity.y); // Get the velocity of the level
 
         const entities = jsonObject.entities.map(entity => EntityAPI.Entity.fromJSON(engineAPI, entity, {position, rotation, velocity}));
         return new Level(engineAPI, entities, jsonObject.levelManager);
@@ -173,6 +179,10 @@ export class Engine {
     }
 
     async preload() {
+        // Preload all the modules
+        // Sort the modules by priority
+        // Preload the game manager
+
         const priorityMap = new Map();
         priorityMap.set("asset", 0);
         priorityMap.set("audio", 1);
@@ -199,6 +209,7 @@ export class Engine {
     }
 
     loadModules() {
+        // Load all the modules
         this.modules.asset = new AssetModule(this.api);
         this.modules.audio = new AudioModule(this.api);
         this.modules.input = new InputModule(this.api);
@@ -253,8 +264,8 @@ export class Engine {
             }
         }
 
-        this.currentLevel = level;
-        this.currentLevel.start();
+        this.currentLevel = level; // Set the current level to the new level
+        this.currentLevel.start(); // Start the new level
     }
 
     start() {
@@ -273,10 +284,11 @@ export class Engine {
     }
 
     update() {
+        // Update the engine
         const gameSpeed = 1;
-        let dt = performance.now() - this.#lastUpdate;
+        let dt = performance.now() - this.#lastUpdate; // Calculate the time since the last update
         dt /= 1000;
-        dt *= gameSpeed;
+        dt *= gameSpeed; // Multiply the time by the game speed, to allow for slow motion or fast forward
         this.#lastUpdate = performance.now();
 
         for (let module of this.sortedModules) {
@@ -285,12 +297,12 @@ export class Engine {
             }
         }
 
-        this.gameManager.Update(dt);
+        this.gameManager.Update(dt); // Update the game manager
        
         if(this.currentLevel !== null){
-            this.currentLevel.update(dt);
+            this.currentLevel.update(dt); // Update the current level if it exists
         }
 
-        requestAnimationFrame(() => this.update(dt));
+        requestAnimationFrame(() => this.update(dt)); // Request the next frame to update
     }
 }

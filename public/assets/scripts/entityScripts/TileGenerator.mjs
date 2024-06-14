@@ -66,7 +66,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
             for (let tile of this.tileMap.tiles){
                 this.loadedTiles.push(new Tile(tile.x, tile.y, tile.textureCoordinate, tile.noPhysics));
-                this.loadedCoordinates.add(`${tile.x},${tile.y}`);
+                this.loadedCoordinates.add(`${tile.x},${tile.y}`); // Add the coordinates to the loaded coordinates set
             }
 
             this.fillBlankTiles();
@@ -108,7 +108,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             ctx.font = "20px Arial";
             ctx.fillText("Save", saveButton.x + 10, saveButton.y + 30);
         }
-        const saveRenderTask = new RenderAPI.RenderTask(saveRenderFunc);
+        const saveRenderTask = new RenderAPI.RenderTask(saveRenderFunc); // Create the render task
         renderAPI.addTask(saveRenderTask, true);
             
         if (inputAPI.getInputDown("eraser")){
@@ -123,44 +123,45 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         }
 
         if (inputAPI.getInputDown("panCamera")){
+            // Set the last mouse position to the current mouse position
             this.lastMousePosition = {x: mouseCoords.x, y: mouseCoords.y};
         }
         
         if (inputAPI.getMouseInput("panCamera")){
-            const sensitivity = 1.3;
+            const sensitivity = 1.3; // The sensitivity of the camera panning
 
             const endPan = {x: mouseCoords.x, y: mouseCoords.y};
             const camera = this.engineAPI.getAPI("render").getCamera();
 
             const deltaPan = {x: endPan.x - this.lastMousePosition.x, y: endPan.y - this.lastMousePosition.y};
 
-            camera.x -= deltaPan.x * sensitivity;
-            camera.y -= deltaPan.y * sensitivity;
+            camera.x -= deltaPan.x * sensitivity; // Move the camera by the delta of the mouse position
+            camera.y -= deltaPan.y * sensitivity; // Move the camera by the delta of the mouse position
 
-            this.lastMousePosition = {x: endPan.x, y: endPan.y};
+            this.lastMousePosition = {x: endPan.x, y: endPan.y}; // Set the last mouse position to the current mouse position
         }
 
         
 
 
         if (inputAPI.getInputDown("selectionBox")){
-            this.removeStartPosition = mouseToWorld;
+            this.removeStartPosition = mouseToWorld; // Set the start position of the selection box
         }
 
         if (this.removeStartPosition !== null && inputAPI.getMouseInput("selectionBox") === false){
             const endPosition = mouseToWorld;
         
             // get tiles that are within the start and end position
-            const xMin = Math.min(this.removeStartPosition.x, endPosition.x);
-            const xMax = Math.max(this.removeStartPosition.x, endPosition.x);
-            const yMin = Math.min(this.removeStartPosition.y, endPosition.y);
-            const yMax = Math.max(this.removeStartPosition.y, endPosition.y);
+            const xMin = Math.min(this.removeStartPosition.x, endPosition.x); // Get the minimum x value
+            const xMax = Math.max(this.removeStartPosition.x, endPosition.x); // Get the maximum x value
+            const yMin = Math.min(this.removeStartPosition.y, endPosition.y); // Get the minimum y value 
+            const yMax = Math.max(this.removeStartPosition.y, endPosition.y); // Get the maximum y value
 
             for (let tile of this.loadedTiles){
-                tile.x += 0.5;
-                tile.y += 0.5;
+                tile.x += 0.5; // Add 0.5 to the x value
+                tile.y += 0.5; // Add 0.5 to the y value
                 if ((tile.x) * this.tileGridSize > xMin && (tile.x) * this.tileGridSize < xMax && (tile.y) * this.tileGridSize > yMin && (tile.y) * this.tileGridSize < yMax){
-                    if (inputAPI.getKeyboardInput("ctrlAdd") && inputAPI.getKeyboardInput("shiftRemove")){
+                    if (inputAPI.getKeyboardInput("ctrlAdd") && inputAPI.getKeyboardInput("shiftRemove")){ 
                         if (tile.noPhysics === undefined){
                             tile.noPhysics = true;
                         }
@@ -228,6 +229,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             }
 
             else{
+                // Get the mouse position in world coordinates
 
                 const x = Math.floor(mouseToWorld.x / this.tileGridSize);
                 const y = Math.floor(mouseToWorld.y / this.tileGridSize);
@@ -269,6 +271,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
    
 
     renderTiles(){
+        // Render the tiles
         for (let tile of this.loadedTiles){
             if (tile.textureCoordinate < 0){
                 continue;
@@ -357,12 +360,13 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
         }
 
+        // Save the current context state
         offscreenCtx.save();
         offscreenCanvas.width = maxX - minX + this.tileGridSize;
         offscreenCanvas.height = maxY - minY + this.tileGridSize;
         offscreenCtx.translate(-minX, -minY);
 
-
+        // Set the offscreen canvas position
         renderModule.offscreenCanvasPosition = {x: minX, y: minY};
 
 
@@ -374,7 +378,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const x = tile.x * this.tileGridSize;
             const y = tile.y * this.tileGridSize;
 
-            this.preRenderedTiles.add(`${tile.x},${tile.y}`);
+            this.preRenderedTiles.add(`${tile.x},${tile.y}`); // Add the tile to the pre rendered tiles set
 
 
             const imageTileWidth = Math.ceil(this.tileTexture.width / this.tilesAcross);
@@ -383,7 +387,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             const textureCoordinateToX = (tile.textureCoordinate % this.tilesAcross) * imageTileWidth;
             const textureCoordinateToY = Math.floor(tile.textureCoordinate / this.tilesAcross) * imageTileHeight;
 
-            offscreenCtx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1);
+            offscreenCtx.drawImage(this.tileTexture, textureCoordinateToX, textureCoordinateToY, imageTileWidth, imageTileHeight, x, y, this.tileGridSize + 1, this.tileGridSize + 1); // Draw the tile to the offscreen canvas
         }
 
         offscreenCtx.restore();
@@ -403,8 +407,10 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     saveTileMapping(){
+        // Save the tile mapping to a json file
         const alreadySaved = new Set();
 
+        // Create the tile map object
         const tileMap = {
             tiles: []
         }
@@ -412,6 +418,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
         // Load session stored tiles
         const storedTiles = JSON.parse(localStorage.getItem("StoredTiles"));
 
+        // Add the stored tiles to the tile map
         if (storedTiles !== null){
             for (let tile of storedTiles){
                 alreadySaved.add(`${tile.x},${tile.y}`);
@@ -419,7 +426,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             }
         }
 
-
+        // Add the loaded tiles to the tile map
         for (let tile of this.loadedTiles){
             if (alreadySaved.has(`${tile.x},${tile.y}`)){
                 continue;
@@ -427,7 +434,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             tileMap.tiles.push({x: tile.x, y: tile.y, textureCoordinate: tile.textureCoordinate, noPhysics: tile.noPhysics});
         }
 
-
+        // Save the tile map to the local storage
         const json = JSON.stringify(tileMap);
         const blob = new Blob([json], {type: "application/json"});
         const url = URL.createObjectURL(blob);
@@ -439,6 +446,9 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
     }
 
     generateColliders(){
+        // Uses a square merge algorithm to merge the tiles into bigger blocks that can then be used as colliders
+        // The colliders are then added to the physics engine so the player can collide with them
+
         const mergedBlocks = new Map();
         // fill merged blocks with the loaded tiles
         for (let tile of this.loadedTiles){
@@ -447,6 +457,7 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             }
         }
 
+        // all the blocks are merged into bigger blocks as rows
         const mergeRows = () => {
             const searchNeighbours = (block) => {
                 const blockSplit = block.split(",");
@@ -475,11 +486,13 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
             
             }
 
+            // loop through all the blocks
             for (let block of mergedBlocks){
-                searchNeighbours(block[1]);
+                searchNeighbours(block[1]); // search for neighbours
             }
         }
 
+        // all the rows are merged into bigger blocks if they have the same width
         const mergeSameWidthRows = () => {
             const searchNeighbours = (block) => {
                 const blockSplit = block.split(",");
@@ -511,14 +524,15 @@ export default class TileGenerator extends ScriptingAPI.Monobehaviour {
 
             for (let block of mergedBlocks){
                 searchNeighbours(block[1]);
+
             }
         }
 
-        //console.log(mergedBlocks);
         mergeRows();
         mergeSameWidthRows();
 
 
+        // Create the rigidbody for the tiles and add the colliders to it
         if (this.tileRB !== null){
             const physModule = this.engineAPI.getModule("physics")
             physModule.physicsEngine.deleteRigidbody(this.tileRB);

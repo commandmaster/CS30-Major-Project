@@ -6,6 +6,7 @@ export class AssetAPI extends ModuleAPI {
         this.assetConfigPath = "./assets/assetConfig.json";
     }
 
+    // a way to fetch an image from the asset module
     getImage(path) {
         return this.engineAPI.getModule("asset").getImage(path);
     }
@@ -19,9 +20,11 @@ export class AssetModule extends Module {
     }
 
     preload() {
+        // load all assets from the assetConfig.json file
         this.#loadAllAssets("./assets/assetConfig.json");
     }
 
+    // load all assets from the assetConfig.json file
     #loadAllAssets(assetConfigPath) {
         fetch(assetConfigPath)
             .then((response) => response.json())
@@ -38,6 +41,7 @@ export class AssetModule extends Module {
             });
     }
 
+    // load an asset of a specific type
     #loadAsset(assetType, path) {
         if (this.#assets[path] != null && this.#assets[path] !== undefined) {
             return this.#assets[path];
@@ -45,11 +49,11 @@ export class AssetModule extends Module {
 
         switch (assetType.toLowerCase()) {
             case "image":
-                return this.#loadImage(path);
+                return this.#loadImage(path); // load an image
             case "audio":
-                return this.#loadAudio(path);
+                return this.#loadAudio(path); // load an audio
             case "json":
-                return this.#loadJSON(path);
+                return this.#loadJSON(path); // load a json file
             case "script":
                 return new Promise((resolve, reject) => {
                   resolve();
@@ -64,6 +68,7 @@ export class AssetModule extends Module {
         }
     }
 
+    // load an image from a path
     #loadImage(path) {
         return new Promise((resolve, reject) => {
             let image = new Image();
@@ -76,6 +81,7 @@ export class AssetModule extends Module {
         });
     }
 
+    // load an audio from a path
     #loadAudio(path) {
         return new Promise((resolve, reject) => {
             path = "." + path;
@@ -87,6 +93,7 @@ export class AssetModule extends Module {
         });
     }
 
+    // load a json file from a path
     #loadJSON(path) {
         return new Promise((resolve, reject) => {
             fetch(path)
@@ -98,6 +105,7 @@ export class AssetModule extends Module {
         });
     }
 
+    // get an image from a path
     getImage(path) {
         return this.#assets[path];
     }
